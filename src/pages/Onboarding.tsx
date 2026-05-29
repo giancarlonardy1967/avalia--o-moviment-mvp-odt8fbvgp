@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Switch } from '@/components/ui/switch'
 import {
   Dialog,
   DialogContent,
@@ -14,9 +15,8 @@ import {
 import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
 import { toast } from 'sonner'
-import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, Shield, Heart } from 'lucide-react'
+import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, Shield, Heart, Activity } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { BreathingCircle } from '@/components/BreathingCircle'
 
 const SOC13_QUESTIONS_FULL = [
   {
@@ -97,13 +97,16 @@ export default function Onboarding() {
     company: '',
     department: '',
     team: '',
-    habitsFrequency: '',
+    checkinFrequency: 'daily',
+    privacyAccepted: true,
   })
 
   const [socResponses, setSocResponses] = useState<Record<number, number>>({})
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [saveError, setSaveError] = useState(false)
-  const [breathingActive, setBreathingActive] = useState(false)
+
+  const [habits, setHabits] = useState<any[]>([])
+  const [selectedHabit, setSelectedHabit] = useState<string>('')
 
   useEffect(() => {
     if (!user) return
@@ -117,6 +120,11 @@ export default function Onboarding() {
         setSocResponses(loaded)
       })
       .catch(() => {})
+
+    pb.collection('habits_library')
+      .getFullList()
+      .then(setHabits)
+      .catch(() => {})
   }, [user])
 
   const handleNext = () => setStep((s) => s + 1)
@@ -125,7 +133,12 @@ export default function Onboarding() {
   const handleNextQuestion = async () => {
     setSaveError(false)
     const val = socResponses[currentQuestionIndex]
-    if (val === undefined || !user) return
+
+    if (val === undefined || val < 1 || val > 7) {
+      toast.error('Erro de validação (422): O valor deve estar entre 1 e 7.')
+      return
+    }
+    if (!user) return
 
     setIsSaving(true)
     let retries = 3
@@ -196,8 +209,44 @@ export default function Onboarding() {
     if (!user) return
     setIsSaving(true)
     try {
+      let totalScore = 0
+      const INVERTED_INDICES = [0, 1, 2, 6, 9]
+
+      for (let i = 0; i < 13; i++) {
+        const val = socResponses[i]
+        if (val === undefined || val < 1 || val > 7) {
+          toast.error(
+            'Erro de validação (422): Todas as perguntas do SOC-13 devem ter valores entre 1 e 7.',
+          )
+          setIsSaving(false)
+          return
+        }
+        if (INVERTED_INDICES.includes(i)) {
+          totalScore += 8 - val
+        } else {
+          totalScore += val
+        }
+      }
+
+      if (totalScore < 13 || totalScore > 91) {
+        toast.error('Erro de validação: Score SOC-13 calculado é inválido.')
+        setIsSaving(false)
+        return
+      }
+
       if (formData.name) {
         await pb.collection('users').update(user.id, { name: formData.name })
+      }
+
+      if (selectedHabit) {
+        const habit = habits.find((h) => h.id === selectedHabit)
+        if (habit) {
+          await pb.collection('micro_habits_logs').create({
+            user_id: user.id,
+            habit_type: habit.title,
+            completed: true,
+          })
+        }
       }
 
       let profileId = null
@@ -214,6 +263,7 @@ export default function Onboarding() {
         company_name: formData.company,
         department: formData.department,
         team: formData.team,
+        predictive_score: totalScore,
         last_checkin_at: new Date().toISOString(),
       }
 
@@ -249,7 +299,7 @@ export default function Onboarding() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-base">
             <Shield className="w-5 h-5 text-indigo-600" />
             Sua Privacidade e Dados
           </DialogTitle>
@@ -277,7 +327,7 @@ export default function Onboarding() {
   )
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4 sm:p-6 w-full min-h-[calc(100vh-4rem)] bg-slate-50 relative">
+    <div className="flex-1 flex items-center justify-center p-4 w-full min-h-[calc(100vh-4rem)] bg-slate-50 relative">
       <PrivacyModal />
 
       <div className="max-w-3xl w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative z-10">
@@ -288,7 +338,7 @@ export default function Onboarding() {
           />
         </div>
 
-        <div className="p-6 sm:p-12">
+        <div className="p-6 sm:p-10">
           {/* Step 1: Acolhimento */}
           {step === 1 && (
             <div className="space-y-6 animate-fade-in max-w-xl mx-auto">
@@ -296,16 +346,16 @@ export default function Onboarding() {
                 <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
                   <Heart className="w-8 h-8 text-indigo-600" />
                 </div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   Boas-vindas ao Moviment
                 </h1>
-                <p className="text-slate-500 mt-2 text-lg">
+                <p className="text-slate-500 mt-2 text-sm sm:text-base">
                   Um espaço seguro e focado no seu bem-estar diário.
                 </p>
               </div>
-              <div className="space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-2">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
                     <Label htmlFor="name" className="text-sm font-semibold">
                       Como você prefere ser chamado?
                     </Label>
@@ -317,7 +367,7 @@ export default function Onboarding() {
                       className="h-11"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="company" className="text-sm font-semibold">
                       Empresa
                     </Label>
@@ -329,7 +379,7 @@ export default function Onboarding() {
                       className="h-11"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="department" className="text-sm font-semibold">
                       Departamento
                     </Label>
@@ -341,7 +391,7 @@ export default function Onboarding() {
                       className="h-11"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="team" className="text-sm font-semibold">
                       Equipe / Squad
                     </Label>
@@ -369,65 +419,57 @@ export default function Onboarding() {
           {step === 2 && (
             <div className="space-y-6 animate-fade-in max-w-xl mx-auto text-center">
               <div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                  Que tal uma pausa antes de continuar?
-                </h1>
+                <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+                  <Activity className="w-8 h-8 text-indigo-600" />
+                </div>
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Ação Imediata</h1>
                 <p className="text-slate-500 mt-2 text-sm sm:text-base">
-                  Muitas vezes esquecemos de respirar profundamente. Acompanhe o círculo abaixo por
-                  1 minuto.
+                  Selecione um micro-hábito inicial para logar hoje. É o seu primeiro passo.
                 </p>
               </div>
 
-              <div
-                className="py-6 cursor-pointer"
-                onClick={() => setBreathingActive(!breathingActive)}
-              >
-                <BreathingCircle isActive={breathingActive} />
-                <p className="text-xs text-indigo-500 font-medium mt-4">
-                  Clique no círculo para {breathingActive ? 'parar' : 'iniciar'} a respiração guiada
-                </p>
-              </div>
-
-              <div className="text-left space-y-4 pt-4 border-t border-slate-100">
-                <Label className="text-sm font-bold text-slate-700">
-                  Com que frequência você costuma fazer pausas no trabalho?
-                </Label>
-                <RadioGroup
-                  value={formData.habitsFrequency}
-                  onValueChange={(val) => setFormData({ ...formData, habitsFrequency: val })}
-                  className="flex flex-col space-y-2"
-                >
-                  <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 cursor-pointer">
-                    <RadioGroupItem value="rarely" id="r1" />
-                    <Label htmlFor="r1" className="cursor-pointer w-full text-sm">
-                      Raramente, trabalho direto
-                    </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                {habits.length === 0 ? (
+                  <div className="col-span-1 sm:col-span-2 text-center text-sm text-slate-500 p-4 border rounded-xl">
+                    Carregando hábitos...
                   </div>
-                  <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 cursor-pointer">
-                    <RadioGroupItem value="sometimes" id="r2" />
-                    <Label htmlFor="r2" className="cursor-pointer w-full text-sm">
-                      Às vezes, quando lembro
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 cursor-pointer">
-                    <RadioGroupItem value="frequently" id="r3" />
-                    <Label htmlFor="r3" className="cursor-pointer w-full text-sm">
-                      Frequentemente (faz parte da rotina)
-                    </Label>
-                  </div>
-                </RadioGroup>
+                ) : (
+                  habits.slice(0, 4).map((habit) => (
+                    <div
+                      key={habit.id}
+                      onClick={() => setSelectedHabit(habit.id)}
+                      className={cn(
+                        'p-4 border-2 rounded-xl cursor-pointer transition-all flex flex-col items-start text-left',
+                        selectedHabit === habit.id
+                          ? 'border-indigo-600 bg-indigo-50 shadow-sm'
+                          : 'border-slate-100 hover:border-indigo-300 bg-white',
+                      )}
+                    >
+                      <h3 className="font-bold text-slate-800 text-sm leading-tight line-clamp-1">
+                        {habit.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1 flex-1 line-clamp-2">
+                        {habit.description}
+                      </p>
+                      <span className="text-xs font-semibold text-indigo-600 mt-3 bg-indigo-100 px-2 py-1 rounded-md">
+                        {habit.duration_minutes} min
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
 
               <div className="flex gap-4 mt-8">
                 <Button onClick={handlePrev} variant="outline" className="w-1/3 h-12">
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
+                  <ArrowLeft className="w-4 h-4 sm:mr-2" />{' '}
+                  <span className="hidden sm:inline">Voltar</span>
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={!formData.habitsFrequency}
-                  className="w-2/3 h-12 text-base font-bold"
+                  disabled={!selectedHabit}
+                  className="w-2/3 h-12 text-sm sm:text-base font-bold"
                 >
-                  Continuar <ArrowRight className="w-5 h-5 ml-2" />
+                  Continuar <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
                 </Button>
               </div>
             </div>
@@ -435,29 +477,29 @@ export default function Onboarding() {
 
           {/* Step 3: Calibração (SOC-13) */}
           {step === 3 && (
-            <div className="space-y-6 animate-fade-in flex flex-col min-h-[380px]">
+            <div className="space-y-6 animate-fade-in flex flex-col min-h-[380px] max-w-xl mx-auto">
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                    Calibração de Perfil
+                    Calibração
                   </h1>
                   <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
                     {currentQuestionIndex + 1} / 13
                   </span>
                 </div>
-                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-5">
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-4">
                   <div
                     className="bg-indigo-600 h-full transition-all duration-300"
                     style={{ width: `${((currentQuestionIndex + 1) / 13) * 100}%` }}
                   />
                 </div>
-                <p className="text-sm sm:text-base font-semibold text-slate-800 mt-2 min-h-[3rem] leading-snug">
+                <p className="text-sm font-semibold text-slate-800 mt-2 min-h-[3rem] leading-snug">
                   {SOC13_QUESTIONS_FULL[currentQuestionIndex].text}
                 </p>
               </div>
 
               <div className="flex-1 flex flex-col justify-center my-4 w-full">
-                <div className="flex justify-between items-center w-full gap-1 sm:gap-2 mb-3">
+                <div className="flex justify-between items-center w-full gap-1 mb-3">
                   {[1, 2, 3, 4, 5, 6, 7].map((val) => {
                     const isSelected = socResponses[currentQuestionIndex] === val
                     return (
@@ -468,7 +510,7 @@ export default function Onboarding() {
                           setSocResponses((prev) => ({ ...prev, [currentQuestionIndex]: val }))
                         }}
                         className={cn(
-                          'flex items-center justify-center flex-1 aspect-square max-w-[3rem] rounded-full border-2 transition-all text-sm sm:text-base font-bold select-none',
+                          'flex items-center justify-center flex-1 aspect-square max-w-[2.5rem] rounded-full border-2 transition-all text-sm font-bold select-none',
                           isSelected
                             ? 'border-indigo-600 bg-indigo-600 text-white shadow-md scale-110'
                             : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-slate-50',
@@ -480,7 +522,7 @@ export default function Onboarding() {
                   })}
                 </div>
 
-                <div className="flex justify-between w-full text-[10px] sm:text-xs font-semibold text-slate-500 px-1 uppercase tracking-wider">
+                <div className="flex justify-between w-full text-[10px] sm:text-xs font-medium text-slate-500 px-1 uppercase tracking-wider">
                   <span className="w-5/12 text-left leading-tight text-slate-400">
                     {SOC13_QUESTIONS_FULL[currentQuestionIndex].anchor1}
                   </span>
@@ -490,7 +532,7 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              <div className="flex gap-3 sm:gap-4 pt-4 border-t border-slate-100">
+              <div className="flex gap-3 pt-4 border-t border-slate-100">
                 <Button
                   onClick={handlePrevQuestion}
                   variant="outline"
@@ -503,7 +545,7 @@ export default function Onboarding() {
                   onClick={handleNextQuestion}
                   disabled={socResponses[currentQuestionIndex] === undefined || isSaving}
                   className={cn(
-                    'w-2/3 h-12 shrink-0 font-bold',
+                    'w-2/3 h-12 shrink-0 text-sm sm:text-base font-bold',
                     currentQuestionIndex === 12 ? 'bg-indigo-600 hover:bg-indigo-700' : '',
                   )}
                 >
@@ -530,37 +572,59 @@ export default function Onboarding() {
                 <CheckCircle2 className="w-8 h-8 text-emerald-600" />
               </div>
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                Tudo pronto, {formData.name || 'colaborador(a)'}!
+                Integração Passiva
               </h1>
-              <div className="text-left bg-slate-50 rounded-xl p-5 border border-slate-200 space-y-4">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">1. Sugestões Diárias</h3>
-                  <p className="text-xs text-slate-600 mt-1">
-                    A partir de amanhã, você receberá sugestões de pausas ativas (micro-hábitos)
-                    adaptadas à sua rotina e respostas.
-                  </p>
+              <p className="text-slate-500 mt-2 text-sm sm:text-base">
+                Configure suas preferências antes de finalizar.
+              </p>
+
+              <div className="text-left space-y-6 mt-6">
+                <div className="space-y-4 pt-2">
+                  <Label className="text-sm font-bold text-slate-700">
+                    Com que frequência deseja receber sugestões de pausas?
+                  </Label>
+                  <RadioGroup
+                    value={formData.checkinFrequency}
+                    onValueChange={(val) => setFormData({ ...formData, checkinFrequency: val })}
+                    className="flex flex-col space-y-2"
+                  >
+                    <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 cursor-pointer">
+                      <RadioGroupItem value="daily" id="f1" />
+                      <Label htmlFor="f1" className="cursor-pointer w-full text-sm">
+                        Diariamente
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 cursor-pointer">
+                      <RadioGroupItem value="weekly" id="f2" />
+                      <Label htmlFor="f2" className="cursor-pointer w-full text-sm">
+                        Semanalmente
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">2. Notificações Amigáveis</h3>
-                  <p className="text-xs text-slate-600 mt-1">
-                    Nós o avisaremos quando for a melhor hora para sua pausa, sem interrupções
-                    invasivas.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">3. Anonimato Garantido</h3>
-                  <p className="text-xs text-slate-600 mt-1">
-                    Suas respostas da Calibração (SOC-13) jamais serão vistas de forma individual.
-                    Aplicamos K-Anonymity para apresentar os dados ao RH apenas em grupos maiores de
-                    forma agregada.
-                  </p>
+
+                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200 gap-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-bold text-slate-800">
+                      Privacidade (K-Anonymity)
+                    </Label>
+                    <p className="text-[11px] sm:text-xs text-slate-500">
+                      Concordo que meus dados de grupo sejam exibidos de forma anônima e agregada
+                      para o RH.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.privacyAccepted}
+                    onCheckedChange={(val) => setFormData({ ...formData, privacyAccepted: val })}
+                  />
                 </div>
               </div>
+
               <div className="flex gap-4 pt-4">
                 <Button
                   onClick={handleFinish}
-                  disabled={isSaving}
-                  className="w-full h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700"
+                  disabled={isSaving || !formData.privacyAccepted}
+                  className="w-full h-12 text-sm sm:text-base font-bold bg-emerald-600 hover:bg-emerald-700"
                 >
                   {isSaving ? (
                     <Loader2 className="animate-spin w-5 h-5 mr-2" />
