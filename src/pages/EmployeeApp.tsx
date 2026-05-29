@@ -183,7 +183,7 @@ export default function EmployeeApp() {
       <Card className="w-full max-w-sm h-[600px] shadow-2xl rounded-[24px] overflow-hidden border-0 relative bg-background flex flex-col">
         <div className="absolute top-0 left-0 w-full h-1 bg-border">
           <div
-            className="h-full bg-salvia transition-all duration-1000 ease-in-out"
+            className="h-full bg-primary transition-all duration-1000 ease-in-out"
             style={{
               width: currentState.includes('onboarding')
                 ? `${(parseInt(currentState.split('-')[1]) / 4) * 100}%`
@@ -197,8 +197,8 @@ export default function EmployeeApp() {
         <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative h-full">
           {currentState === 'onboarding-1' && (
             <div className="animate-fade-in flex flex-col items-center h-full justify-center w-full">
-              <div className="w-16 h-16 bg-azul-ar rounded-full flex items-center justify-center mb-8">
-                <Wind className="w-8 h-8 text-salvia" />
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-8">
+                <Wind className="w-8 h-8 text-primary" />
               </div>
               <h1 className="text-2xl font-medium tracking-tight text-foreground mb-4">
                 Este é o seu espaço de respiro no trabalho.
@@ -208,7 +208,7 @@ export default function EmployeeApp() {
               </p>
               <Button
                 onClick={() => setCurrentState('onboarding-2')}
-                className="w-full h-12 text-lg rounded-full bg-terracota hover:bg-terracota/90 mt-auto text-white"
+                className="w-full h-12 text-lg rounded-full bg-primary hover:bg-primary/90 mt-auto text-primary-foreground font-bold"
               >
                 Começar
               </Button>
@@ -232,9 +232,9 @@ export default function EmployeeApp() {
                   onMouseLeave={stopBreathing}
                   onTouchStart={startBreathing}
                   onTouchEnd={stopBreathing}
-                  className="w-24 h-24 rounded-full bg-azul-ar hover:bg-azul-ar/90 shadow-lg active:scale-95 transition-all flex flex-col items-center justify-center select-none"
+                  className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 shadow-lg active:scale-95 transition-all flex flex-col items-center justify-center select-none"
                 >
-                  <span className="text-salvia font-medium">Segure</span>
+                  <span className="text-primary-foreground font-bold">Segure</span>
                 </Button>
               </div>
             </div>
@@ -263,7 +263,7 @@ export default function EmployeeApp() {
 
           {currentState === 'onboarding-4' && (
             <div className="animate-fade-in flex flex-col items-center h-full justify-start w-full pt-4">
-              <ShieldCheck className="w-12 h-12 text-salvia mb-6" />
+              <ShieldCheck className="w-12 h-12 text-primary mb-6" />
               <h2 className="text-xl font-medium mb-8">
                 Sua privacidade é o nosso pilar mais forte.
               </h2>
@@ -272,7 +272,7 @@ export default function EmployeeApp() {
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="font-medium flex items-center gap-2">
-                      <Calendar className="w-4 h-4" /> Sincronizar Calendário
+                      <Calendar className="w-4 h-4 text-primary" /> Sincronizar Calendário
                     </span>
                     <span className="text-xs text-muted-foreground">Para sugerir pausas.</span>
                   </div>
@@ -281,15 +281,15 @@ export default function EmployeeApp() {
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="font-medium flex items-center gap-2">
-                      <Activity className="w-4 h-4" /> Wearables/Passos
+                      <Activity className="w-4 h-4 text-primary" /> Wearables/Passos
                     </span>
                     <span className="text-xs text-muted-foreground">Para entender o cansaço.</span>
                   </div>
                   <Switch />
                 </div>
-                <div className="bg-azul-ar p-4 rounded-xl mt-4 border border-border">
+                <div className="bg-primary/10 p-4 rounded-xl mt-4 border border-primary/20">
                   <span className="font-medium text-sm flex items-center gap-2 mb-1">
-                    <ShieldCheck className="w-4 h-4 text-salvia" /> Anonimato Garantido
+                    <ShieldCheck className="w-4 h-4 text-primary" /> Anonimato Garantido
                   </span>
                   <p className="text-xs text-muted-foreground">
                     Seus dados nunca serão vistos pelo RH.
@@ -299,9 +299,9 @@ export default function EmployeeApp() {
 
               <Button
                 onClick={finishOnboarding}
-                className="w-full h-12 text-lg rounded-full bg-salvia hover:bg-salvia/90 mt-auto text-white"
+                className="w-full h-12 text-lg rounded-full bg-primary hover:bg-primary/90 mt-auto text-primary-foreground font-bold"
               >
-                Tudo Pronto
+                Permitir Acesso
               </Button>
             </div>
           )}
@@ -320,7 +320,7 @@ export default function EmployeeApp() {
               <div className="mt-auto w-full flex flex-col gap-3">
                 <Button
                   onClick={() => setCurrentState(canCheckIn ? 'soc-question' : 'habit-suggestion')}
-                  className="w-full h-12 text-lg rounded-full bg-azul-ar hover:bg-azul-ar/90 text-salvia font-medium"
+                  className="w-full h-12 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
                 >
                   {canCheckIn ? 'Fazer Check-in' : 'Oxigenar a mente'}
                 </Button>
@@ -330,7 +330,7 @@ export default function EmployeeApp() {
                     setHasFinishedFlow(true)
                     setCurrentState('idle')
                   }}
-                  className="w-full h-12 rounded-full text-muted-foreground"
+                  className="w-full h-12 rounded-full text-muted-foreground font-medium"
                 >
                   Agora não posso
                 </Button>
@@ -358,13 +358,13 @@ export default function EmployeeApp() {
 
           {currentState === 'habit-suggestion' && (
             <div className="animate-fade-in flex flex-col items-center h-full justify-center w-full bg-background absolute inset-0 p-8 z-30">
-              <div className="w-16 h-16 bg-azul-ar rounded-full flex items-center justify-center mb-6">
-                <Activity className="w-8 h-8 text-salvia" />
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                <Activity className="w-8 h-8 text-primary" />
               </div>
               <h2 className="text-xl font-bold mb-2">Sugestão de Pausa</h2>
               {suggestedHabit ? (
                 <div className="bg-secondary/20 p-6 rounded-2xl w-full border border-border mb-8 text-left">
-                  <div className="text-xs font-semibold text-salvia uppercase tracking-wider mb-2">
+                  <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">
                     {suggestedHabit.category} • {suggestedHabit.duration_minutes} min
                   </div>
                   <h3 className="text-lg font-medium text-foreground mb-2">
@@ -381,14 +381,14 @@ export default function EmployeeApp() {
               <div className="w-full mt-auto flex flex-col gap-3">
                 <Button
                   onClick={() => handleHabitAction(true)}
-                  className="w-full h-12 text-lg rounded-full bg-salvia hover:bg-salvia/90 text-white"
+                  className="w-full h-12 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
                 >
                   <PlayCircle className="mr-2 w-5 h-5" /> Iniciar e Concluir
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => handleHabitAction(false)}
-                  className="w-full h-12 text-lg rounded-full text-terracota border-terracota hover:bg-terracota/10"
+                  className="w-full h-12 text-lg rounded-full text-foreground border-border hover:bg-secondary font-medium"
                 >
                   <XCircle className="mr-2 w-5 h-5" /> Pular desta vez
                 </Button>
@@ -398,10 +398,10 @@ export default function EmployeeApp() {
 
           {currentState === 'feedback' && (
             <div className="animate-fade-in-up flex flex-col items-center h-full justify-center w-full bg-background absolute inset-0 p-8 z-40">
-              <div className="w-20 h-20 bg-salvia/20 rounded-full flex items-center justify-center mb-6 animate-pulse-ring">
-                <Check className="w-10 h-10 text-salvia" />
+              <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-6 animate-pulse-ring">
+                <Check className="w-10 h-10 text-primary" />
               </div>
-              <h2 className="text-2xl font-medium text-salvia mb-2">+10 pontos de energia</h2>
+              <h2 className="text-2xl font-medium text-primary mb-2">+10 pontos de energia</h2>
               <p className="text-muted-foreground text-sm mb-8 text-center">
                 Obrigado por cuidar de você hoje! Fogo ativo: 5 dias seguidos.
               </p>
@@ -411,7 +411,7 @@ export default function EmployeeApp() {
                   toast({ title: 'Rotina salva', description: 'Continuando em segundo plano.' })
                   setCurrentState('idle')
                 }}
-                className="w-full h-12 rounded-full mt-auto bg-azul-ar text-salvia hover:bg-azul-ar/80 font-medium"
+                className="w-full h-12 rounded-full mt-auto bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
               >
                 Voltar ao Trabalho
               </Button>
