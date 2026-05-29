@@ -29,7 +29,7 @@ export const SOC13_QUESTIONS = [
   { id: 'P9', text: 'Acontece de você ter sentimentos que preferiria não ter?' },
   {
     id: 'P10',
-    text: 'Muitas pessoas... às vezes se sentem fracassadas ou injustiçadas... Com que frequência você se sentiu assim?',
+    text: 'Muitas pessoas — mesmo aquelas com forte caráter — às vezes se sentem fracassadas ou injustiçadas em certas situações. Com que frequência você se sentiu assim no passado?',
   },
   { id: 'P11', text: 'Quando algo acontece, você geralmente acha que... ?' },
   {

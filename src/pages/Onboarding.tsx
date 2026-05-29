@@ -57,7 +57,7 @@ const SOC13_QUESTIONS_FULL = [
     anchor7: 'Com muita frequência ou sempre',
   },
   {
-    text: '10. Muitas pessoas... às vezes se sentem fracassadas ou injustiçadas... Com que frequência você se sentiu assim?',
+    text: '10. Muitas pessoas — mesmo aquelas com forte caráter — às vezes se sentem fracassadas ou injustiçadas em certas situações. Com que frequência você se sentiu assim no passado?',
     anchor1: 'Nunca me senti assim',
     anchor7: 'Senti-me assim com muita frequência',
   },
@@ -409,7 +409,7 @@ export default function Onboarding() {
                     style={{ width: `${((currentQuestionIndex + 1) / 13) * 100}%` }}
                   />
                 </div>
-                <p className="text-xl font-medium text-slate-800 mt-2 min-h-[4rem]">
+                <p className="text-base font-medium text-slate-800 mt-2 min-h-[4rem]">
                   {SOC13_QUESTIONS_FULL[currentQuestionIndex].text}
                 </p>
               </div>
@@ -436,7 +436,7 @@ export default function Onboarding() {
                         <Label
                           htmlFor={`q${currentQuestionIndex}-o${val}`}
                           className={cn(
-                            'flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 cursor-pointer transition-all text-base sm:text-lg font-bold select-none',
+                            'flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 cursor-pointer transition-all text-sm sm:text-base font-bold select-none',
                             isSelected
                               ? 'border-indigo-600 bg-indigo-600 text-white shadow-md scale-110'
                               : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-slate-50',
@@ -449,7 +449,7 @@ export default function Onboarding() {
                   })}
                 </RadioGroup>
 
-                <div className="flex justify-between w-full mt-6 text-sm font-medium text-slate-500 px-1">
+                <div className="flex justify-between w-full mt-6 text-xs sm:text-sm font-medium text-slate-500 px-1">
                   <span className="w-5/12 text-left leading-tight">
                     {SOC13_QUESTIONS_FULL[currentQuestionIndex].anchor1}
                   </span>
