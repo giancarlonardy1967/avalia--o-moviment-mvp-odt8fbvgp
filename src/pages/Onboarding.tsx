@@ -12,160 +12,69 @@ import { cn } from '@/lib/utils'
 
 const SOC13_QUESTIONS_FULL = [
   {
-    text: '1. Você tem a sensação de que não se importa muito com o que acontece ao seu redor?',
-    options: [
-      { value: 1, label: 'Nunca' },
-      { value: 2, label: 'Quase nunca' },
-      { value: 3, label: 'Raramente' },
-      { value: 4, label: 'Ocasionalmente' },
-      { value: 5, label: 'Frequentemente' },
-      { value: 6, label: 'Muito frequentemente' },
-      { value: 7, label: 'Sempre' },
-    ],
+    text: '1. Você tem a sensação de que não se importa realmente com o que acontece ao seu redor?',
+    anchor1: 'Muito raramente ou nunca',
+    anchor7: 'Com muita frequência ou sempre',
   },
   {
-    text: '2. Você já foi surpreendido pelo comportamento de pessoas que achava conhecer bem?',
-    options: [
-      { value: 1, label: 'Nunca aconteceu' },
-      { value: 2, label: 'Quase nunca' },
-      { value: 3, label: 'Raramente' },
-      { value: 4, label: 'Ocasionalmente' },
-      { value: 5, label: 'Frequentemente' },
-      { value: 6, label: 'Quase sempre' },
-      { value: 7, label: 'Sempre aconteceu' },
-    ],
+    text: '2. No passado, você já foi surpreendido pelo comportamento de pessoas que você achava que conhecia bem?',
+    anchor1: 'Nunca aconteceu',
+    anchor7: 'Sempre aconteceu',
   },
   {
-    text: '3. Já aconteceu de pessoas em quem você confiava o decepcionarem?',
-    options: [
-      { value: 1, label: 'Nunca aconteceu' },
-      { value: 2, label: 'Quase nunca' },
-      { value: 3, label: 'Raramente' },
-      { value: 4, label: 'Ocasionalmente' },
-      { value: 5, label: 'Frequentemente' },
-      { value: 6, label: 'Quase sempre' },
-      { value: 7, label: 'Sempre aconteceu' },
-    ],
+    text: '3. Já aconteceu de você ser pego de surpresa por pessoas em quem você confiava?',
+    anchor1: 'Nunca aconteceu',
+    anchor7: 'Sempre aconteceu',
   },
   {
-    text: '4. Até agora a sua vida tem:',
-    options: [
-      { value: 1, label: 'Sido sem objetivos' },
-      { value: 2, label: 'Quase sem objetivos' },
-      { value: 3, label: 'Poucos objetivos' },
-      { value: 4, label: 'Alguns objetivos' },
-      { value: 5, label: 'Objetivos moderados' },
-      { value: 6, label: 'Objetivos claros' },
-      { value: 7, label: 'Objetivos muito claros' },
-    ],
+    text: '4. Até agora, sua vida tem tido...',
+    anchor1: 'Nenhuma meta ou propósito claro',
+    anchor7: 'Metas e propósitos muito claros',
   },
   {
-    text: '5. Você tem a sensação de que é tratado injustamente?',
-    options: [
-      { value: 1, label: 'Nunca' },
-      { value: 2, label: 'Quase nunca' },
-      { value: 3, label: 'Raramente' },
-      { value: 4, label: 'Ocasionalmente' },
-      { value: 5, label: 'Frequentemente' },
-      { value: 6, label: 'Muito frequentemente' },
-      { value: 7, label: 'Sempre' },
-    ],
+    text: '5. Você tem sentimentos e reações das quais não tem certeza se consegue controlar?',
+    anchor1: 'Muito raramente ou nunca',
+    anchor7: 'Com muita frequência ou sempre',
   },
   {
-    text: '6. Você tem a sensação de estar em uma situação desconhecida e não saber o que fazer?',
-    options: [
-      { value: 1, label: 'Nunca' },
-      { value: 2, label: 'Quase nunca' },
-      { value: 3, label: 'Raramente' },
-      { value: 4, label: 'Ocasionalmente' },
-      { value: 5, label: 'Frequentemente' },
-      { value: 6, label: 'Muito frequentemente' },
-      { value: 7, label: 'Sempre' },
-    ],
+    text: '6. Você tem a sensação de que está em uma situação desconhecida e não sabe o que fazer?',
+    anchor1: 'Muito raramente ou nunca',
+    anchor7: 'Com muita frequência ou sempre',
   },
   {
-    text: '7. Fazer as coisas que você faz no dia a dia é:',
-    options: [
-      { value: 1, label: 'Muita dor e aborrecimento' },
-      { value: 2, label: 'Dor e aborrecimento' },
-      { value: 3, label: 'Pouco prazer' },
-      { value: 4, label: 'Neutro' },
-      { value: 5, label: 'Algum prazer e satisfação' },
-      { value: 6, label: 'Prazer e satisfação' },
-      { value: 7, label: 'Muito prazer e satisfação' },
-    ],
+    text: '7. Fazer as coisas que você faz no dia a dia é...',
+    anchor1: 'Uma fonte de profundo prazer e satisfação',
+    anchor7: 'Uma fonte de dor e tédio extremo',
   },
   {
-    text: '8. Você tem sentimentos ou ideias muito confusas?',
-    options: [
-      { value: 1, label: 'Nunca' },
-      { value: 2, label: 'Quase nunca' },
-      { value: 3, label: 'Raramente' },
-      { value: 4, label: 'Ocasionalmente' },
-      { value: 5, label: 'Frequentemente' },
-      { value: 6, label: 'Muito frequentemente' },
-      { value: 7, label: 'Sempre' },
-    ],
+    text: '8. Você tem sentimentos ou pensamentos confusos e misturados?',
+    anchor1: 'Muito raramente ou nunca',
+    anchor7: 'Com muita frequência ou sempre',
   },
   {
-    text: '9. Você acha que não consegue controlar o que acontece?',
-    options: [
-      { value: 1, label: 'Nunca' },
-      { value: 2, label: 'Quase nunca' },
-      { value: 3, label: 'Raramente' },
-      { value: 4, label: 'Ocasionalmente' },
-      { value: 5, label: 'Frequentemente' },
-      { value: 6, label: 'Muito frequentemente' },
-      { value: 7, label: 'Sempre' },
-    ],
+    text: '9. Acontece de você ter sentimentos que preferiria não ter?',
+    anchor1: 'Muito raramente ou nunca',
+    anchor7: 'Com muita frequência ou sempre',
   },
   {
-    text: '10. Você já sentiu que não faz sentido continuar tentando?',
-    options: [
-      { value: 1, label: 'Nunca' },
-      { value: 2, label: 'Quase nunca' },
-      { value: 3, label: 'Raramente' },
-      { value: 4, label: 'Ocasionalmente' },
-      { value: 5, label: 'Frequentemente' },
-      { value: 6, label: 'Muito frequentemente' },
-      { value: 7, label: 'Sempre' },
-    ],
+    text: '10. Muitas pessoas... às vezes se sentem fracassadas ou injustiçadas... Com que frequência você se sentiu assim?',
+    anchor1: 'Nunca me senti assim',
+    anchor7: 'Senti-me assim com muita frequência',
   },
   {
-    text: '11. As coisas que você faz no dia a dia fazem sentido?',
-    options: [
-      { value: 1, label: 'Nunca fazem sentido' },
-      { value: 2, label: 'Quase nunca' },
-      { value: 3, label: 'Raramente' },
-      { value: 4, label: 'Ocasionalmente' },
-      { value: 5, label: 'Frequentemente' },
-      { value: 6, label: 'Quase sempre' },
-      { value: 7, label: 'Sempre fazem sentido' },
-    ],
+    text: '11. Quando algo acontece, você geralmente acha que... ?',
+    anchor1: 'Superestima ou subestima a importância daquilo',
+    anchor7: 'Vê as coisas na sua real proporção',
   },
   {
-    text: '12. Você tem a sensação de que os seus sentimentos são difíceis de controlar?',
-    options: [
-      { value: 1, label: 'Nunca' },
-      { value: 2, label: 'Quase nunca' },
-      { value: 3, label: 'Raramente' },
-      { value: 4, label: 'Ocasionalmente' },
-      { value: 5, label: 'Frequentemente' },
-      { value: 6, label: 'Muito frequentemente' },
-      { value: 7, label: 'Sempre' },
-    ],
+    text: '12. Você tem a sensação de que as coisas que faz no seu dia a dia têm muito pouco significado?',
+    anchor1: 'Muito raramente ou nunca',
+    anchor7: 'Com muita frequência ou sempre',
   },
   {
-    text: '13. Você se sente confuso sobre a sua vida em geral?',
-    options: [
-      { value: 1, label: 'Nunca' },
-      { value: 2, label: 'Quase nunca' },
-      { value: 3, label: 'Raramente' },
-      { value: 4, label: 'Ocasionalmente' },
-      { value: 5, label: 'Frequentemente' },
-      { value: 6, label: 'Muito frequentemente' },
-      { value: 7, label: 'Sempre' },
-    ],
+    text: '13. Com que frequência você tem a sensação de que não tem certeza se consegue se controlar?',
+    anchor1: 'Muito raramente ou nunca',
+    anchor7: 'Com muita frequência ou sempre',
   },
 ]
 
@@ -210,53 +119,67 @@ export default function Onboarding() {
     if (val === undefined || !user) return
 
     setIsSaving(true)
-    try {
-      const INVERTED_INDICES = [0, 1, 2, 6, 9]
-      const calculated_score = INVERTED_INDICES.includes(currentQuestionIndex) ? 8 - val : val
+    let retries = 3
+    let success = false
 
+    const INVERTED_INDICES = [0, 1, 2, 6, 9]
+    const calculated_score = INVERTED_INDICES.includes(currentQuestionIndex) ? 8 - val : val
+
+    while (retries > 0 && !success) {
       try {
-        const existing = await pb
-          .collection('soc13_responses')
-          .getFirstListItem(`user_id = '${user.id}' && question_index = ${currentQuestionIndex}`)
-
-        if (existing.raw_value !== val) {
-          await pb.collection('soc13_responses').update(existing.id, {
-            raw_value: val,
-            calculated_score: calculated_score,
-          })
+        if (!pb.authStore.isValid) {
+          throw new Error('Sessão expirada. Recarregue a página.')
         }
-      } catch (e: any) {
-        // A 404 indicates the record doesn't exist yet, which is expected for the first save
-        if (e.status === 404) {
-          await pb.collection('soc13_responses').create({
-            user_id: user.id,
-            question_index: currentQuestionIndex,
-            raw_value: val,
-            calculated_score: calculated_score,
-          })
-        } else {
-          // Re-throw genuine network or server errors
-          throw e
-        }
-      }
 
-      if (currentQuestionIndex === SOC13_QUESTIONS_FULL.length - 1) {
-        await handleFinish()
-      } else {
-        setCurrentQuestionIndex((i) => i + 1)
+        try {
+          const existing = await pb
+            .collection('soc13_responses')
+            .getFirstListItem(`user_id = '${user.id}' && question_index = ${currentQuestionIndex}`)
+
+          if (existing.raw_value !== val) {
+            await pb.collection('soc13_responses').update(existing.id, {
+              raw_value: val,
+              calculated_score: calculated_score,
+            })
+          }
+        } catch (e: any) {
+          if (e.status === 404) {
+            await pb.collection('soc13_responses').create({
+              user_id: user.id,
+              question_index: currentQuestionIndex,
+              raw_value: val,
+              calculated_score: calculated_score,
+            })
+          } else {
+            throw e
+          }
+        }
+        success = true
+      } catch (err: any) {
+        retries -= 1
+        if (retries === 0) {
+          console.error('Save error:', err)
+          setSaveError(true)
+          toast.error('Erro de conexão. A resposta não foi salva.', {
+            action: {
+              label: 'Tentar novamente',
+              onClick: () => handleNextQuestion(),
+            },
+            duration: 5000,
+          })
+          setIsSaving(false)
+          return
+        }
+        await new Promise((r) => setTimeout(r, 1000))
       }
-    } catch (err: any) {
-      console.error('Save error:', err)
-      setSaveError(true)
-      toast.error('Erro de conexão. A resposta não foi salva.', {
-        action: {
-          label: 'Tente novamente',
-          onClick: () => handleNextQuestion(),
-        },
-        duration: 5000,
-      })
-    } finally {
-      setIsSaving(false)
+    }
+
+    setIsSaving(false)
+
+    if (currentQuestionIndex === SOC13_QUESTIONS_FULL.length - 1) {
+      await handleFinish()
+    } else {
+      setCurrentQuestionIndex((i) => i + 1)
     }
   }
 
@@ -477,7 +400,7 @@ export default function Onboarding() {
                     Avaliação SOC-13
                   </h1>
                   <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                    {currentQuestionIndex + 1} de 13
+                    Questão {currentQuestionIndex + 1} de 13
                   </span>
                 </div>
                 <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-6">
@@ -486,12 +409,12 @@ export default function Onboarding() {
                     style={{ width: `${((currentQuestionIndex + 1) / 13) * 100}%` }}
                   />
                 </div>
-                <p className="text-xl font-medium text-slate-800 mt-2 min-h-[3rem]">
+                <p className="text-xl font-medium text-slate-800 mt-2 min-h-[4rem]">
                   {SOC13_QUESTIONS_FULL[currentQuestionIndex].text}
                 </p>
               </div>
 
-              <div className="flex-1 flex flex-col justify-center my-6">
+              <div className="flex-1 flex flex-col justify-center my-6 max-w-2xl mx-auto w-full">
                 <RadioGroup
                   key={currentQuestionIndex}
                   value={socResponses[currentQuestionIndex]?.toString() || ''}
@@ -499,49 +422,41 @@ export default function Onboarding() {
                     setSaveError(false)
                     setSocResponses((prev) => ({ ...prev, [currentQuestionIndex]: parseInt(val) }))
                   }}
-                  className="grid grid-cols-1 sm:grid-cols-7 gap-3"
+                  className="flex justify-between items-center w-full gap-1 sm:gap-3"
                 >
-                  {SOC13_QUESTIONS_FULL[currentQuestionIndex].options.map((opt) => {
-                    const isSelected = socResponses[currentQuestionIndex] === opt.value
+                  {[1, 2, 3, 4, 5, 6, 7].map((val) => {
+                    const isSelected = socResponses[currentQuestionIndex] === val
                     return (
-                      <div key={opt.value} className="relative h-full">
+                      <div key={val} className="relative flex flex-col items-center flex-1">
                         <RadioGroupItem
-                          value={opt.value.toString()}
-                          id={`q${currentQuestionIndex}-o${opt.value}`}
+                          value={val.toString()}
+                          id={`q${currentQuestionIndex}-o${val}`}
                           className="peer sr-only"
                         />
                         <Label
-                          htmlFor={`q${currentQuestionIndex}-o${opt.value}`}
+                          htmlFor={`q${currentQuestionIndex}-o${val}`}
                           className={cn(
-                            'flex sm:flex-col items-center sm:justify-start gap-4 sm:gap-3 p-4 sm:px-2 sm:py-5 rounded-xl border-2 cursor-pointer transition-all w-full h-full text-left sm:text-center select-none',
+                            'flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 cursor-pointer transition-all text-base sm:text-lg font-bold select-none',
                             isSelected
-                              ? 'border-indigo-600 bg-indigo-50/50 shadow-sm'
-                              : 'border-slate-100 bg-white hover:border-indigo-200 hover:bg-slate-50',
+                              ? 'border-indigo-600 bg-indigo-600 text-white shadow-md scale-110'
+                              : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-slate-50',
                           )}
                         >
-                          <div
-                            className={cn(
-                              'w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full flex items-center justify-center text-base sm:text-lg font-bold transition-colors',
-                              isSelected
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'bg-slate-100 text-slate-500',
-                            )}
-                          >
-                            {opt.value}
-                          </div>
-                          <span
-                            className={cn(
-                              'text-sm font-medium leading-tight mt-1',
-                              isSelected ? 'text-indigo-900 font-bold' : 'text-slate-600',
-                            )}
-                          >
-                            {opt.label}
-                          </span>
+                          {val}
                         </Label>
                       </div>
                     )
                   })}
                 </RadioGroup>
+
+                <div className="flex justify-between w-full mt-6 text-sm font-medium text-slate-500 px-1">
+                  <span className="w-5/12 text-left leading-tight">
+                    {SOC13_QUESTIONS_FULL[currentQuestionIndex].anchor1}
+                  </span>
+                  <span className="w-5/12 text-right leading-tight">
+                    {SOC13_QUESTIONS_FULL[currentQuestionIndex].anchor7}
+                  </span>
+                </div>
               </div>
 
               <div className="flex gap-4 pt-4 border-t border-slate-100">

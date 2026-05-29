@@ -5,29 +5,41 @@
 export const SOC13_QUESTIONS = [
   {
     id: 'P1',
-    text: 'Você tem a sensação de que não se importa muito com o que acontece ao seu redor?',
+    text: 'Você tem a sensação de que não se importa realmente com o que acontece ao seu redor?',
   },
   {
     id: 'P2',
-    text: 'Você já foi surpreendido pelo comportamento de pessoas que achava conhecer bem?',
+    text: 'No passado, você já foi surpreendido pelo comportamento de pessoas que você achava que conhecia bem?',
   },
-  { id: 'P3', text: 'Já aconteceu de pessoas em quem você confiava o decepcionarem?' },
   {
-    id: 'P4',
-    text: 'Até agora a sua vida tem: não tido objetivos claros (1) / tido objetivos claros (7)?',
+    id: 'P3',
+    text: 'Já aconteceu de você ser pego de surpresa por pessoas em quem você confiava?',
   },
-  { id: 'P5', text: 'Você tem a sensação de que é tratado injustamente?' },
+  { id: 'P4', text: 'Até agora, sua vida tem tido...' },
+  {
+    id: 'P5',
+    text: 'Você tem sentimentos e reações das quais não tem certeza se consegue controlar?',
+  },
   {
     id: 'P6',
-    text: 'Você tem a sensação de estar em uma situação desconhecida e não saber o que fazer?',
+    text: 'Você tem a sensação de que está em uma situação desconhecida e não sabe o que fazer?',
   },
-  { id: 'P7', text: 'Fazer as coisas que você faz no dia a dia é fonte de prazer e satisfação?' },
-  { id: 'P8', text: 'Você tem sentimentos ou ideias muito confusas?' },
-  { id: 'P9', text: 'Você acha que não consegue controlar o que acontece?' },
-  { id: 'P10', text: 'Você já sentiu que não faz sentido continuar tentando?' },
-  { id: 'P11', text: 'As coisas que você faz no dia a dia fazem sentido?' },
-  { id: 'P12', text: 'Você tem a sensação de que os seus sentimentos são difíceis de controlar?' },
-  { id: 'P13', text: 'Você se sente confuso sobre a sua vida em geral?' },
+  { id: 'P7', text: 'Fazer as coisas que você faz no dia a dia é...' },
+  { id: 'P8', text: 'Você tem sentimentos ou pensamentos confusos e misturados?' },
+  { id: 'P9', text: 'Acontece de você ter sentimentos que preferiria não ter?' },
+  {
+    id: 'P10',
+    text: 'Muitas pessoas... às vezes se sentem fracassadas ou injustiçadas... Com que frequência você se sentiu assim?',
+  },
+  { id: 'P11', text: 'Quando algo acontece, você geralmente acha que... ?' },
+  {
+    id: 'P12',
+    text: 'Você tem a sensação de que as coisas que faz no seu dia a dia têm muito pouco significado?',
+  },
+  {
+    id: 'P13',
+    text: 'Com que frequência você tem a sensação de que não tem certeza se consegue se controlar?',
+  },
 ]
 
 // Items that require mathematical inversion (8 - value)
