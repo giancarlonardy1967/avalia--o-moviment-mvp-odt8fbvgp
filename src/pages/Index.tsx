@@ -5,6 +5,7 @@ import { HeartPulse, LayoutDashboard, Loader2 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import pb from '@/lib/pocketbase/client'
 
 export default function Index() {
   const { signIn } = useAuth()
@@ -23,7 +24,18 @@ export default function Index() {
         return
       }
 
-      navigate(role === 'admin' ? '/rh/dashboard' : '/employee')
+      if (role === 'admin') {
+        navigate('/rh/dashboard')
+      } else {
+        try {
+          await pb
+            .collection('employee_profiles')
+            .getFirstListItem(`user_id="${pb.authStore.record?.id}"`)
+          navigate('/employee')
+        } catch (err) {
+          navigate('/onboarding')
+        }
+      }
     } finally {
       setLoading(null)
     }

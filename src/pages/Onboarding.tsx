@@ -2,14 +2,32 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import { Shuffle, ArrowRight, ShieldCheck, Activity, Calendar } from 'lucide-react'
+import { Shuffle, ArrowRight, ShieldCheck, Activity, Calendar, Loader2 } from 'lucide-react'
 import { LikertScale } from '@/components/LikertScale'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import pb from '@/lib/pocketbase/client'
+import { useAuth } from '@/hooks/use-auth'
+import { useToast } from '@/hooks/use-toast'
 
 export default function Onboarding() {
   const [step, setStep] = useState(1)
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const { toast } = useToast()
+
   const [progress, setProgress] = useState(0)
   const [isHolding, setIsHolding] = useState(false)
+  const [department, setDepartment] = useState('')
+  const [team, setTeam] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (step !== 2) return
@@ -30,6 +48,23 @@ export default function Onboarding() {
     }
     return () => clearInterval(interval)
   }, [isHolding, step])
+
+  const handleFinish = async () => {
+    if (!user) return
+    setIsSaving(true)
+    try {
+      await pb.collection('employee_profiles').create({
+        user_id: user.id,
+        department,
+        team,
+      })
+      navigate('/employee')
+    } catch (err: any) {
+      toast({ title: 'Erro ao salvar perfil', description: err.message, variant: 'destructive' })
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-brand-blue flex items-center justify-center p-4 text-brand-carbon font-sans">
@@ -111,6 +146,55 @@ export default function Onboarding() {
         {step === 4 && (
           <div className="space-y-8 animate-fade-in">
             <div className="text-center">
+              <h2 className="text-2xl font-medium mb-4">Qual é a sua área?</h2>
+              <p className="opacity-80">
+                Isso nos ajuda a entender melhor o contexto do seu dia a dia.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 space-y-6 shadow-subtle">
+              <div className="space-y-3">
+                <Label htmlFor="department">Departamento</Label>
+                <Select value={department} onValueChange={setDepartment}>
+                  <SelectTrigger id="department">
+                    <SelectValue placeholder="Selecione seu departamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Engenharia">Engenharia</SelectItem>
+                    <SelectItem value="Produto">Produto</SelectItem>
+                    <SelectItem value="Design">Design</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Vendas">Vendas</SelectItem>
+                    <SelectItem value="RH">Recursos Humanos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="team">Equipe / Squad</Label>
+                <Input
+                  id="team"
+                  placeholder="Ex: Squad de Pagamentos"
+                  value={team}
+                  onChange={(e) => setTeam(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <Button
+              size="lg"
+              className="bg-brand-green hover:bg-brand-green/90 text-white w-full rounded-full text-lg h-14"
+              disabled={!department || !team}
+              onClick={() => setStep(5)}
+            >
+              Continuar
+            </Button>
+          </div>
+        )}
+
+        {step === 5 && (
+          <div className="space-y-8 animate-fade-in">
+            <div className="text-center">
               <h2 className="text-2xl font-medium mb-4">
                 Sua privacidade é o nosso pilar mais forte.
               </h2>
@@ -150,9 +234,10 @@ export default function Onboarding() {
             <Button
               size="lg"
               className="bg-brand-green hover:bg-brand-green/90 text-white w-full rounded-full text-lg h-14"
-              onClick={() => navigate('/employee')}
+              onClick={handleFinish}
+              disabled={isSaving}
             >
-              Tudo Pronto
+              {isSaving ? <Loader2 className="animate-spin" /> : 'Tudo Pronto'}
             </Button>
           </div>
         )}
