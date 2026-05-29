@@ -17,7 +17,6 @@ export default function Onboarding() {
 
   const [progress, setProgress] = useState(0)
   const [isHolding, setIsHolding] = useState(false)
-
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -58,22 +57,23 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 text-foreground font-sans">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6 text-foreground font-sans">
       <div className="max-w-md w-full animate-fade-in-up">
         {step === 1 && (
           <div className="text-center space-y-8 animate-fade-in">
-            <div className="text-primary mb-8 flex justify-center">
-              <Activity size={48} />
+            <div className="text-primary mb-6 flex justify-center">
+              <Activity size={56} className="text-primary" />
             </div>
-            <h1 className="text-3xl font-medium tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-balance leading-tight">
               Este é o seu espaço de respiro no trabalho.
             </h1>
-            <p className="text-lg opacity-80">
-              Sem cobranças, sem metas agressivas. Apenas pequenas pausas para você.
+            <p className="text-base sm:text-lg text-muted-foreground px-2">
+              Sem cobranças, sem metas agressivas. Apenas pequenas pausas para você focar no seu
+              bem-estar.
             </p>
             <Button
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold w-full rounded-full text-lg h-14 mt-8"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold w-full rounded-full text-lg h-14 mt-8 shadow-md hover:shadow-lg transition-all"
               onClick={() => setStep(2)}
             >
               Começar
@@ -82,51 +82,61 @@ export default function Onboarding() {
         )}
 
         {step === 2 && (
-          <div className="text-center space-y-12 animate-fade-in">
-            <h2 className="text-2xl font-medium">
-              Vamos testar a sua primeira pausa? É jogo rápido.
-            </h2>
-            <p className="text-lg opacity-80">
-              Gire os seus ombros para trás três vezes enquanto pressiona o botão.
-            </p>
-            <div className="flex justify-center items-center py-8">
+          <div className="text-center space-y-10 animate-fade-in">
+            <div className="space-y-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-balance leading-tight">
+                Vamos testar a sua primeira pausa? É jogo rápido.
+              </h2>
+              <p className="text-base sm:text-lg text-muted-foreground">
+                Gire os seus ombros para trás três vezes enquanto pressiona o botão.
+              </p>
+            </div>
+            <div className="flex justify-center items-center py-6">
               <button
                 onMouseDown={() => setIsHolding(true)}
                 onMouseUp={() => setIsHolding(false)}
                 onMouseLeave={() => setIsHolding(false)}
                 onTouchStart={() => setIsHolding(true)}
                 onTouchEnd={() => setIsHolding(false)}
-                className="relative w-32 h-32 rounded-full bg-primary hover:bg-primary/90 shadow-lg flex items-center justify-center transition-transform active:scale-95 select-none"
+                className="relative w-36 h-36 sm:w-40 sm:h-40 rounded-full bg-primary shadow-xl shadow-primary/20 flex items-center justify-center transition-transform active:scale-95 select-none touch-none focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
               >
                 <div
-                  className="absolute inset-0 rounded-full bg-background opacity-20"
-                  style={{ transform: `scale(${1 + progress / 100})` }}
+                  className="absolute inset-0 rounded-full bg-white opacity-20"
+                  style={{
+                    transform: `scale(${1 + progress / 100})`,
+                    transition: isHolding ? 'transform 50ms linear' : 'transform 200ms ease-out',
+                  }}
                 />
-                <span className="relative z-10 font-bold text-primary-foreground">
+                <span className="relative z-10 font-bold text-primary-foreground text-lg">
                   {isHolding ? 'Continue...' : 'Pressione'}
                 </span>
               </button>
             </div>
+            <p className="text-sm text-muted-foreground">
+              Mantenha pressionado para completar a pausa.
+            </p>
           </div>
         )}
 
         {step === 3 && (
-          <div className="text-center space-y-12 animate-fade-in">
-            <h2 className="text-2xl font-medium">
-              Para desenharmos as melhores pausas para a sua rotina...
-            </h2>
-            <p className="text-lg opacity-80">
-              Como tem sido o ritmo das suas semanas de trabalho ultimamente?
-            </p>
-            <div className="py-8 space-y-6">
+          <div className="text-center space-y-10 animate-fade-in">
+            <div className="space-y-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-balance leading-tight">
+                Para desenharmos as melhores pausas para a sua rotina...
+              </h2>
+              <p className="text-base sm:text-lg text-muted-foreground">
+                Como tem sido o ritmo das suas semanas de trabalho ultimamente?
+              </p>
+            </div>
+            <div className="py-6 space-y-8">
               <LikertScale onSelect={() => setStep(4)} />
-              <div className="flex justify-between text-sm font-medium opacity-70">
-                <div className="flex flex-col items-center max-w-[120px] text-center gap-2">
-                  <Shuffle className="text-destructive" />
+              <div className="flex justify-between text-xs sm:text-sm font-medium text-muted-foreground px-2">
+                <div className="flex flex-col items-center max-w-[100px] sm:max-w-[120px] text-center gap-2">
+                  <Shuffle className="text-destructive w-5 h-5 sm:w-6 sm:h-6" />
                   <span>Sinto que estou apagando incêndios</span>
                 </div>
-                <div className="flex flex-col items-center max-w-[120px] text-center gap-2">
-                  <ArrowRight className="text-primary" />
+                <div className="flex flex-col items-center max-w-[100px] sm:max-w-[120px] text-center gap-2">
+                  <ArrowRight className="text-primary w-5 h-5 sm:w-6 sm:h-6" />
                   <span>Sei exatamente para onde vou</span>
                 </div>
               </div>
@@ -136,50 +146,62 @@ export default function Onboarding() {
 
         {step === 4 && (
           <div className="space-y-8 animate-fade-in">
-            <div className="text-center">
-              <h2 className="text-2xl font-medium mb-4">
+            <div className="text-center space-y-3">
+              <h2 className="text-2xl font-bold text-balance">
                 Sua privacidade é o nosso pilar mais forte.
               </h2>
-              <p className="opacity-80">Configure como o Moviment pode interagir com você.</p>
+              <p className="text-base text-muted-foreground text-balance">
+                Configure como o Moviment pode interagir com você.
+              </p>
             </div>
-            <div className="bg-card rounded-2xl p-6 space-y-6 border border-border shadow-sm">
+
+            <div className="bg-card rounded-2xl p-5 sm:p-6 space-y-6 border border-border shadow-sm">
               <div className="flex items-center justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2 font-medium">
-                    <Calendar size={18} className="text-primary" /> Sincronizar Calendário
+                <div className="flex flex-col gap-1.5 pr-2">
+                  <div className="flex items-center gap-2 font-semibold text-base">
+                    <Calendar size={20} className="text-primary" /> Sincronizar Calendário
                   </div>
-                  <span className="text-sm opacity-70">
-                    Para sugerir pausas entre as suas reuniões.
+                  <span className="text-sm text-muted-foreground leading-snug">
+                    Para sugerir pausas entre as suas reuniões automaticamente.
                   </span>
                 </div>
-                <Switch defaultChecked />
+                <Switch defaultChecked className="scale-110 sm:scale-100" />
               </div>
+
+              <div className="h-px bg-border w-full" />
+
               <div className="flex items-center justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2 font-medium">
-                    <Activity size={18} className="text-primary" /> Wearables/Passos
+                <div className="flex flex-col gap-1.5 pr-2">
+                  <div className="flex items-center gap-2 font-semibold text-base">
+                    <Activity size={20} className="text-primary" /> Wearables e Passos
                   </div>
-                  <span className="text-sm opacity-70">Para entender seu cansaço físico.</span>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <div className="flex items-start gap-4 p-4 bg-primary/10 rounded-xl border border-primary/20">
-                <ShieldCheck className="text-primary shrink-0 mt-1" />
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium">Anonimato Garantido</span>
-                  <span className="text-sm opacity-70">
-                    Seus dados individuais nunca serão vistos pelo RH ou chefia.
+                  <span className="text-sm text-muted-foreground leading-snug">
+                    Para entender seu cansaço físico e ajustar as pausas.
                   </span>
                 </div>
+                <Switch defaultChecked className="scale-110 sm:scale-100" />
               </div>
             </div>
+
+            <div className="flex items-start gap-4 p-5 bg-primary/5 rounded-2xl border border-primary/20">
+              <ShieldCheck className="text-primary shrink-0 mt-0.5 w-6 h-6" />
+              <div className="flex flex-col gap-1.5">
+                <span className="font-semibold text-base text-primary">Anonimato Garantido</span>
+                <span className="text-sm text-muted-foreground leading-snug">
+                  Seus dados individuais nunca serão vistos pelo RH ou chefia. Eles são usados
+                  exclusivamente para melhorar a sua experiência.
+                </span>
+              </div>
+            </div>
+
             <Button
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold w-full rounded-full text-lg h-14"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold w-full rounded-full text-lg h-14 shadow-md hover:shadow-lg transition-all mt-4"
               onClick={handleFinish}
               disabled={isSaving}
             >
-              {isSaving ? <Loader2 className="animate-spin" /> : 'Permitir Acesso'}
+              {isSaving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : null}
+              {isSaving ? 'Salvando...' : 'Permitir Acesso'}
             </Button>
           </div>
         )}

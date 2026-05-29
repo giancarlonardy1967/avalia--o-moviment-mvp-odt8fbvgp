@@ -42,40 +42,47 @@ export default function Index() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-blue flex flex-col items-center justify-center p-4">
-      <div className="max-w-2xl w-full space-y-12 animate-fade-in-up text-center">
-        <div className="space-y-4">
-          <div className="w-16 h-16 bg-brand-green rounded-2xl flex items-center justify-center mx-auto text-white shadow-lg shadow-brand-green/20">
-            <HeartPulse size={32} />
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
+      <div className="max-w-3xl w-full space-y-10 md:space-y-16 animate-fade-in-up text-center">
+        <div className="space-y-4 md:space-y-6">
+          <div className="w-16 h-16 md:w-20 md:h-20 bg-primary rounded-2xl flex items-center justify-center mx-auto text-primary-foreground shadow-lg shadow-primary/20">
+            <HeartPulse className="w-8 h-8 md:w-10 md:h-10" />
           </div>
-          <h1 className="text-4xl font-semibold tracking-tight text-brand-carbon">Moviment</h1>
-          <p className="text-xl text-muted-foreground font-light">
+          <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground">
+            Moviment
+          </h1>
+          <p className="text-lg md:text-2xl text-muted-foreground font-light max-w-xl mx-auto text-balance">
             De que adianta um corpo leve em um coração pesado?
           </p>
-          <p className="text-brand-green font-medium">Corpo leve, coração leve, mundo leve.</p>
+          <p className="text-primary font-medium text-base md:text-lg">
+            Corpo leve, coração leve, mundo leve.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 pt-4 md:pt-8">
           <Card
-            className="p-6 hover:shadow-elevation transition-shadow border-transparent hover:border-brand-green/20 group cursor-pointer bg-white/80 backdrop-blur"
+            className="p-6 md:p-8 hover:shadow-lg transition-all border-2 border-transparent hover:border-primary/20 group cursor-pointer bg-white"
             onClick={() => handleLogin('employee')}
           >
             <div className="flex flex-col items-center gap-4 text-center h-full">
-              <div className="w-12 h-12 rounded-full bg-brand-blue flex items-center justify-center text-brand-green group-hover:scale-110 transition-transform">
-                <HeartPulse size={24} />
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                <HeartPulse size={28} />
               </div>
-              <div>
-                <h2 className="text-xl font-medium mb-2 text-brand-carbon">Sou Colaborador</h2>
-                <p className="text-muted-foreground text-sm">
+              <div className="mb-4">
+                <h2 className="text-xl md:text-2xl font-semibold mb-2 text-foreground">
+                  Sou Colaborador
+                </h2>
+                <p className="text-muted-foreground text-sm md:text-base text-balance">
                   Acessar a experiência de micro-hábitos e bem-estar diário.
                 </p>
               </div>
               <Button
                 disabled={loading === 'employee'}
-                className="mt-auto w-full bg-brand-green hover:bg-brand-green/90 rounded-full"
+                className="mt-auto w-full rounded-full h-14 text-base md:text-lg font-semibold shadow-md"
+                size="lg"
               >
                 {loading === 'employee' ? (
-                  <Loader2 className="animate-spin" />
+                  <Loader2 className="animate-spin w-5 h-5" />
                 ) : (
                   'Entrar como Colaborador'
                 )}
@@ -84,27 +91,32 @@ export default function Index() {
           </Card>
 
           <Card
-            className="p-6 hover:shadow-elevation transition-shadow border-transparent hover:border-brand-carbon/20 group cursor-pointer bg-white/80 backdrop-blur"
+            className="p-6 md:p-8 hover:shadow-lg transition-all border-2 border-transparent hover:border-muted-foreground/20 group cursor-pointer bg-white"
             onClick={() => handleLogin('admin')}
           >
             <div className="flex flex-col items-center gap-4 text-center h-full">
-              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-brand-carbon group-hover:scale-110 transition-transform">
-                <LayoutDashboard size={24} />
+              <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground group-hover:scale-110 transition-transform">
+                <LayoutDashboard size={28} />
               </div>
-              <div>
-                <h2 className="text-xl font-medium mb-2 text-brand-carbon">
+              <div className="mb-4">
+                <h2 className="text-xl md:text-2xl font-semibold mb-2 text-foreground">
                   Sou Gestor (RH / CFO)
                 </h2>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-sm md:text-base text-balance">
                   Acessar o painel de compliance (NR1) e ROI financeiro.
                 </p>
               </div>
               <Button
                 variant="outline"
                 disabled={loading === 'admin'}
-                className="mt-auto w-full rounded-full border-brand-carbon text-brand-carbon hover:bg-brand-carbon hover:text-white transition-colors"
+                className="mt-auto w-full rounded-full h-14 text-base md:text-lg font-semibold border-border hover:bg-secondary transition-colors"
+                size="lg"
               >
-                {loading === 'admin' ? <Loader2 className="animate-spin" /> : 'Entrar como Gestor'}
+                {loading === 'admin' ? (
+                  <Loader2 className="animate-spin w-5 h-5" />
+                ) : (
+                  'Entrar como Gestor'
+                )}
               </Button>
             </div>
           </Card>
