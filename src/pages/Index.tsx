@@ -1,9 +1,34 @@
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { HeartPulse, LayoutDashboard } from 'lucide-react'
+import { HeartPulse, LayoutDashboard, Loader2 } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
+import { useState } from 'react'
+import { useToast } from '@/hooks/use-toast'
 
 export default function Index() {
+  const { signIn } = useAuth()
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const [loading, setLoading] = useState<'employee' | 'admin' | null>(null)
+
+  const handleLogin = async (role: 'employee' | 'admin') => {
+    setLoading(role)
+    try {
+      const email = role === 'admin' ? 'giancarlonardy@gmail.com' : 'eng1@example.com'
+      const { error } = await signIn(email, 'Skip@Pass')
+
+      if (error) {
+        toast({ title: 'Erro ao fazer login', description: error.message, variant: 'destructive' })
+        return
+      }
+
+      navigate(role === 'admin' ? '/rh/dashboard' : '/employee')
+    } finally {
+      setLoading(null)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-brand-blue flex flex-col items-center justify-center p-4">
       <div className="max-w-2xl w-full space-y-12 animate-fade-in-up text-center">
@@ -19,8 +44,11 @@ export default function Index() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
-          <Card className="p-6 hover:shadow-elevation transition-shadow border-transparent hover:border-brand-green/20 group cursor-pointer bg-white/80 backdrop-blur">
-            <Link to="/onboarding" className="flex flex-col items-center gap-4 text-center h-full">
+          <Card
+            className="p-6 hover:shadow-elevation transition-shadow border-transparent hover:border-brand-green/20 group cursor-pointer bg-white/80 backdrop-blur"
+            onClick={() => handleLogin('employee')}
+          >
+            <div className="flex flex-col items-center gap-4 text-center h-full">
               <div className="w-12 h-12 rounded-full bg-brand-blue flex items-center justify-center text-brand-green group-hover:scale-110 transition-transform">
                 <HeartPulse size={24} />
               </div>
@@ -30,14 +58,24 @@ export default function Index() {
                   Acessar a experiência de micro-hábitos e bem-estar diário.
                 </p>
               </div>
-              <Button className="mt-auto w-full bg-brand-green hover:bg-brand-green/90 rounded-full">
-                Entrar como Colaborador
+              <Button
+                disabled={loading === 'employee'}
+                className="mt-auto w-full bg-brand-green hover:bg-brand-green/90 rounded-full"
+              >
+                {loading === 'employee' ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  'Entrar como Colaborador'
+                )}
               </Button>
-            </Link>
+            </div>
           </Card>
 
-          <Card className="p-6 hover:shadow-elevation transition-shadow border-transparent hover:border-brand-carbon/20 group cursor-pointer bg-white/80 backdrop-blur">
-            <Link to="/dashboard" className="flex flex-col items-center gap-4 text-center h-full">
+          <Card
+            className="p-6 hover:shadow-elevation transition-shadow border-transparent hover:border-brand-carbon/20 group cursor-pointer bg-white/80 backdrop-blur"
+            onClick={() => handleLogin('admin')}
+          >
+            <div className="flex flex-col items-center gap-4 text-center h-full">
               <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-brand-carbon group-hover:scale-110 transition-transform">
                 <LayoutDashboard size={24} />
               </div>
@@ -51,11 +89,12 @@ export default function Index() {
               </div>
               <Button
                 variant="outline"
+                disabled={loading === 'admin'}
                 className="mt-auto w-full rounded-full border-brand-carbon text-brand-carbon hover:bg-brand-carbon hover:text-white transition-colors"
               >
-                Entrar como Gestor
+                {loading === 'admin' ? <Loader2 className="animate-spin" /> : 'Entrar como Gestor'}
               </Button>
-            </Link>
+            </div>
           </Card>
         </div>
       </div>

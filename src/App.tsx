@@ -10,6 +10,7 @@ import Onboarding from './pages/Onboarding'
 import EmployeeApp from './pages/EmployeeApp'
 import Dashboard from './pages/Dashboard'
 import HrDashboard from './pages/hr/Dashboard'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 const App = () => (
   <AuthProvider>
@@ -20,10 +21,16 @@ const App = () => (
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/employee" element={<EmployeeApp />} />
-            <Route path="/rh/dashboard" element={<HrDashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+
+            <Route element={<ProtectedRoute allowedRoles={['employee', 'hr_manager', 'admin']} />}>
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/employee" element={<EmployeeApp />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['hr_manager', 'admin']} />}>
+              <Route path="/rh/dashboard" element={<HrDashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

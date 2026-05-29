@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T14:12:39.707Z",
+  "generatedAt": "2026-05-29T14:25:27.522Z",
   "collections": [
     {
       "name": "users",
@@ -37,6 +37,13 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["employee", "hr_manager", "admin"]
         }
       ],
       "indexes": [
@@ -48,7 +55,7 @@
       "name": "employee_profiles",
       "type": "base",
       "apiRules": {
-        "list": "user_id = @request.auth.id",
+        "list": "@request.auth.id != '' && (@request.auth.role = 'hr_manager' || @request.auth.role = 'admin' || user_id = @request.auth.id)",
         "view": "user_id = @request.auth.id",
         "create": "@request.auth.id != ''",
         "update": "user_id = @request.auth.id",
@@ -81,6 +88,18 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "department",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "team",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": []
@@ -89,7 +108,7 @@
       "name": "soc13_responses",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
+        "list": "@request.auth.id != '' && (@request.auth.role = 'hr_manager' || @request.auth.role = 'admin' || user_id = @request.auth.id)",
         "view": "user_id = @request.auth.id",
         "create": "@request.auth.id != ''",
         "update": "user_id = @request.auth.id",
@@ -142,7 +161,7 @@
       "name": "micro_habits_logs",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
+        "list": "@request.auth.id != '' && (@request.auth.role = 'hr_manager' || @request.auth.role = 'admin' || user_id = @request.auth.id)",
         "view": "user_id = @request.auth.id",
         "create": "@request.auth.id != ''",
         "update": "user_id = @request.auth.id",
