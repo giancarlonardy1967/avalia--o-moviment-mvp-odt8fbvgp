@@ -17,6 +17,7 @@ export const LikertScale = ({ onSelect }: { onSelect: (val: number) => void }) =
         <button
           key={idx}
           onClick={() => onSelect(idx + 1)}
+          aria-label={`Opção ${idx + 1}`}
           className={cn(
             'w-10 h-10 sm:w-12 sm:h-12 rounded-full text-white font-medium',
             'hover:scale-110 transition-transform active:scale-95 shadow-sm',

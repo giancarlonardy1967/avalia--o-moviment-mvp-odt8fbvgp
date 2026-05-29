@@ -28,9 +28,10 @@ export function MunariScale({
           <button
             key={num}
             onClick={() => onSelect(num)}
+            aria-label={`Nível ${num}`}
             className={cn(
-              'relative z-10 w-10 h-10 sm:w-12 sm:h-12 rounded-full font-medium text-sm sm:text-base transition-all duration-200',
-              'flex items-center justify-center',
+              'relative z-10 w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold transition-all duration-200',
+              'flex items-center justify-center text-base',
               'hover:scale-110 active:scale-95',
               'border-2 bg-background',
               // Semantic color gradient from Munari philosophy

@@ -48,6 +48,10 @@ export default function Onboarding() {
         department: 'Geral',
         team: 'Geral',
       })
+      toast({
+        title: 'Boas-vindas ao Moviment! (N01)',
+        description: 'Sua jornada de bem-estar começa agora.',
+      })
       navigate('/employee')
     } catch (err: any) {
       toast({ title: 'Erro ao salvar perfil', description: err.message, variant: 'destructive' })
@@ -57,11 +61,14 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6 text-foreground font-sans">
-      <div className="max-w-md w-full animate-fade-in-up">
+    <main className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6 text-foreground font-sans">
+      <div className="max-w-md w-full animate-fade-in-up" role="region" aria-live="polite">
         {step === 1 && (
-          <div className="text-center space-y-8 animate-fade-in">
-            <div className="text-primary mb-6 flex justify-center">
+          <section
+            className="text-center space-y-8 animate-fade-in"
+            aria-label="Acolhimento Emocional"
+          >
+            <div className="text-primary mb-6 flex justify-center" aria-hidden="true">
               <Activity size={56} className="text-primary" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-balance leading-tight">
@@ -73,16 +80,17 @@ export default function Onboarding() {
             </p>
             <Button
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold w-full rounded-full text-lg h-14 mt-8 shadow-md hover:shadow-lg transition-all"
+              aria-label="Começar onboarding"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold w-full rounded-full h-14 mt-8 shadow-md hover:shadow-lg transition-all"
               onClick={() => setStep(2)}
             >
               Começar
             </Button>
-          </div>
+          </section>
         )}
 
         {step === 2 && (
-          <div className="text-center space-y-10 animate-fade-in">
+          <section className="text-center space-y-10 animate-fade-in" aria-label="Ação Imediata">
             <div className="space-y-4">
               <h2 className="text-xl sm:text-2xl font-bold text-balance leading-tight">
                 Vamos testar a sua primeira pausa? É jogo rápido.
@@ -93,6 +101,11 @@ export default function Onboarding() {
             </div>
             <div className="flex justify-center items-center py-6">
               <button
+                aria-label={
+                  isHolding
+                    ? 'Pressionando botão de pausa'
+                    : 'Pressione e segure para completar a pausa'
+                }
                 onMouseDown={() => setIsHolding(true)}
                 onMouseUp={() => setIsHolding(false)}
                 onMouseLeave={() => setIsHolding(false)}
@@ -112,14 +125,14 @@ export default function Onboarding() {
                 </span>
               </button>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Mantenha pressionado para completar a pausa.
             </p>
-          </div>
+          </section>
         )}
 
         {step === 3 && (
-          <div className="text-center space-y-10 animate-fade-in">
+          <section className="text-center space-y-10 animate-fade-in" aria-label="Calibração">
             <div className="space-y-4">
               <h2 className="text-xl sm:text-2xl font-bold text-balance leading-tight">
                 Para desenharmos as melhores pausas para a sua rotina...
@@ -130,22 +143,22 @@ export default function Onboarding() {
             </div>
             <div className="py-6 space-y-8">
               <LikertScale onSelect={() => setStep(4)} />
-              <div className="flex justify-between text-xs sm:text-sm font-medium text-muted-foreground px-2">
-                <div className="flex flex-col items-center max-w-[100px] sm:max-w-[120px] text-center gap-2">
-                  <Shuffle className="text-destructive w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="flex justify-between text-sm font-medium text-muted-foreground px-2">
+                <div className="flex flex-col items-center max-w-[120px] text-center gap-2">
+                  <Shuffle className="text-destructive w-6 h-6" aria-hidden="true" />
                   <span>Sinto que estou apagando incêndios</span>
                 </div>
-                <div className="flex flex-col items-center max-w-[100px] sm:max-w-[120px] text-center gap-2">
-                  <ArrowRight className="text-primary w-5 h-5 sm:w-6 sm:h-6" />
+                <div className="flex flex-col items-center max-w-[120px] text-center gap-2">
+                  <ArrowRight className="text-primary w-6 h-6" aria-hidden="true" />
                   <span>Sei exatamente para onde vou</span>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
         )}
 
         {step === 4 && (
-          <div className="space-y-8 animate-fade-in">
+          <section className="space-y-8 animate-fade-in" aria-label="Integração Passiva">
             <div className="text-center space-y-3">
               <h2 className="text-2xl font-bold text-balance">
                 Sua privacidade é o nosso pilar mais forte.
@@ -158,36 +171,54 @@ export default function Onboarding() {
             <div className="bg-card rounded-2xl p-5 sm:p-6 space-y-6 border border-border shadow-sm">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex flex-col gap-1.5 pr-2">
-                  <div className="flex items-center gap-2 font-semibold text-base">
-                    <Calendar size={20} className="text-primary" /> Sincronizar Calendário
-                  </div>
-                  <span className="text-sm text-muted-foreground leading-snug">
+                  <label
+                    htmlFor="sync-calendar"
+                    className="flex items-center gap-2 font-bold text-base cursor-pointer"
+                  >
+                    <Calendar size={24} className="text-primary" aria-hidden="true" /> Sincronizar
+                    Calendário
+                  </label>
+                  <span className="text-base text-muted-foreground leading-snug">
                     Para sugerir pausas entre as suas reuniões automaticamente.
                   </span>
                 </div>
-                <Switch defaultChecked className="scale-110 sm:scale-100" />
+                <Switch
+                  id="sync-calendar"
+                  defaultChecked
+                  aria-label="Sincronizar Calendário"
+                  className="scale-110 sm:scale-100"
+                />
               </div>
 
               <div className="h-px bg-border w-full" />
 
               <div className="flex items-center justify-between gap-4">
                 <div className="flex flex-col gap-1.5 pr-2">
-                  <div className="flex items-center gap-2 font-semibold text-base">
-                    <Activity size={20} className="text-primary" /> Wearables e Passos
-                  </div>
-                  <span className="text-sm text-muted-foreground leading-snug">
+                  <label
+                    htmlFor="sync-wearables"
+                    className="flex items-center gap-2 font-bold text-base cursor-pointer"
+                  >
+                    <Activity size={24} className="text-primary" aria-hidden="true" /> Wearables e
+                    Passos
+                  </label>
+                  <span className="text-base text-muted-foreground leading-snug">
                     Para entender seu cansaço físico e ajustar as pausas.
                   </span>
                 </div>
-                <Switch defaultChecked className="scale-110 sm:scale-100" />
+                <Switch
+                  id="sync-wearables"
+                  defaultChecked
+                  aria-label="Wearables e Passos"
+                  className="scale-110 sm:scale-100"
+                />
               </div>
             </div>
 
             <div className="flex items-start gap-4 p-5 bg-primary/5 rounded-2xl border border-primary/20">
-              <ShieldCheck className="text-primary shrink-0 mt-0.5 w-6 h-6" />
+              <ShieldCheck className="text-primary shrink-0 mt-0.5 w-7 h-7" aria-hidden="true" />
               <div className="flex flex-col gap-1.5">
-                <span className="font-semibold text-base text-primary">Anonimato Garantido</span>
-                <span className="text-sm text-muted-foreground leading-snug">
+                <span className="font-bold text-base text-primary">Anonimato Garantido</span>
+                <span className="text-base text-muted-foreground leading-snug">
                   Seus dados individuais nunca serão vistos pelo RH ou chefia. Eles são usados
                   exclusivamente para melhorar a sua experiência.
                 </span>
@@ -196,16 +227,19 @@ export default function Onboarding() {
 
             <Button
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold w-full rounded-full text-lg h-14 shadow-md hover:shadow-lg transition-all mt-4"
+              aria-label="Acessar o Moviment"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold w-full rounded-full h-14 shadow-md hover:shadow-lg transition-all mt-4"
               onClick={handleFinish}
               disabled={isSaving}
             >
-              {isSaving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : null}
+              {isSaving ? (
+                <Loader2 className="animate-spin w-6 h-6 mr-2" aria-hidden="true" />
+              ) : null}
               {isSaving ? 'Salvando...' : 'Acessar o Moviment'}
             </Button>
-          </div>
+          </section>
         )}
       </div>
-    </div>
+    </main>
   )
 }

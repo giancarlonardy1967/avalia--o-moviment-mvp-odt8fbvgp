@@ -17,8 +17,7 @@ export default function EmployeeApp() {
   const navigate = useNavigate()
   const [currentState, setCurrentState] = useState<FlowState>('idle')
   const [profile, setProfile] = useState<any>(null)
-  const [canCheckIn, setCanCheckIn] = useState(true)
-  const [isInactive3Days, setIsInactive3Days] = useState(false)
+  const [canCheckIn, setCanCheckIn] = useState(false)
   const [suggestedHabit, setSuggestedHabit] = useState<any>(null)
 
   const [assessmentOrder, setAssessmentOrder] = useState<typeof SOC13_QUESTIONS>([])
@@ -34,11 +33,31 @@ export default function EmployeeApp() {
           .collection('employee_profiles')
           .getFirstListItem(`user_id="${user.id}"`)
         setProfile(record)
-        if (record.last_checkin_at) {
+
+        if (!record.last_checkin_at) {
+          // Check N02 - First check-in not completed in 24h
+          const createdDate = new Date(record.created).getTime()
+          const hoursSinceCreated = (new Date().getTime() - createdDate) / (1000 * 60 * 60)
+
+          if (hoursSinceCreated > 24) {
+            toast({
+              title: 'Lembrete (N02)',
+              description: 'Você ainda não fez seu primeiro check-in de bem-estar.',
+            })
+          }
+          setCanCheckIn(true)
+        } else {
           const lastCheckin = new Date(record.last_checkin_at).getTime()
           const hoursSince = (new Date().getTime() - lastCheckin) / (1000 * 60 * 60)
-          setCanCheckIn(hoursSince > 48)
-          setIsInactive3Days(hoursSince > 72)
+          setCanCheckIn(hoursSince > 12) // allow check-in every 12h for demo
+
+          // N03 - Weekly Reminder
+          if (hoursSince > 168) {
+            toast({
+              title: 'Sentimos sua falta! (N03)',
+              description: 'Faz mais de uma semana desde o seu último check-in.',
+            })
+          }
         }
       } catch (e) {
         navigate('/onboarding')
@@ -65,20 +84,15 @@ export default function EmployeeApp() {
     if (currentState === 'idle' && profile) {
       const timer = setTimeout(() => {
         if (canCheckIn) {
-          if (isInactive3Days) {
-            toast({
-              title: 'Sentimos sua falta! (N01)',
-              description: 'Que tal 1 minuto para o seu bem-estar hoje?',
-            })
-          }
           setCurrentState('habit-trigger')
         }
       }, 3000)
       return () => clearTimeout(timer)
     }
-  }, [currentState, profile, canCheckIn, isInactive3Days])
+  }, [currentState, profile, canCheckIn])
 
   const startAssessment = () => {
+    // Fisher-Yates shuffle
     const shuffled = [...SOC13_QUESTIONS]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
@@ -100,16 +114,12 @@ export default function EmployeeApp() {
     } else {
       setIsSubmitting(true)
       try {
+        // Backend hook applies the 8-val inversion for inverted questions.
         await pb.send('/backend/v1/soc13/submit', {
           method: 'POST',
           body: JSON.stringify({ answers: newAnswers }),
         })
         setCanCheckIn(false)
-        setIsInactive3Days(false)
-        toast({
-          title: 'Incrível! (N02)',
-          description: 'Você concluiu sua avaliação. Veja sua sugestão de hábito.',
-        })
         setCurrentState('habit-suggestion')
       } catch (e) {
         toast({ title: 'Erro', description: 'Falha ao salvar respostas', variant: 'destructive' })
@@ -127,10 +137,24 @@ export default function EmployeeApp() {
           habit_type: suggestedHabit.category,
           completed,
         })
+
+        if (completed) {
+          const logs = await pb.collection('micro_habits_logs').getList(1, 5, {
+            filter: `user_id="${user.id}"`,
+            sort: '-created',
+          })
+          if (logs.items.length === 5 && logs.items.every((l) => l.completed)) {
+            toast({
+              title: 'Milestone alcançado! (N04)',
+              description: 'Você completou 5 hábitos consecutivamente. Que consistência!',
+            })
+          }
+        }
       } catch {
         /* intentionally ignored */
       }
     }
+
     if (completed) {
       setCurrentState('feedback')
     } else {
@@ -139,17 +163,14 @@ export default function EmployeeApp() {
     }
   }
 
-  const simulateN03 = () => {
-    toast({
-      title: 'Lembrete Diário (N03)',
-      description: `Hora do seu hábito: ${suggestedHabit?.title || 'Respirar fundo'}`,
-    })
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
-      <Card className="w-full max-w-sm h-[600px] shadow-2xl rounded-[24px] overflow-hidden border-0 relative bg-background flex flex-col">
-        <div className="absolute top-0 left-0 w-full h-1 bg-border">
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
+      <Card
+        className="w-full max-w-sm h-[600px] shadow-2xl rounded-[24px] overflow-hidden border-0 relative bg-background flex flex-col"
+        role="region"
+        aria-label="Espaço de bem-estar"
+      >
+        <div className="absolute top-0 left-0 w-full h-1 bg-border" aria-hidden="true">
           <div
             className="h-full bg-primary transition-all duration-1000 ease-in-out"
             style={{
@@ -165,51 +186,59 @@ export default function EmployeeApp() {
 
         <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative h-full">
           {currentState === 'idle' && (
-            <div className="animate-fade-in flex flex-col items-center justify-center h-full w-full">
-              <Wind className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
-              <p className="text-sm text-muted-foreground opacity-50">
+            <section className="animate-fade-in flex flex-col items-center justify-center h-full w-full">
+              <Wind
+                className="w-12 h-12 text-muted-foreground mb-4 opacity-50"
+                aria-hidden="true"
+              />
+              <p className="text-base text-muted-foreground opacity-50">
                 Moviment rodando em segundo plano...
               </p>
               <Button
                 variant="outline"
-                className="mt-8 rounded-full text-muted-foreground"
-                onClick={simulateN03}
+                className="mt-8 rounded-full text-muted-foreground font-medium text-base"
+                onClick={() => setCanCheckIn(true)}
+                aria-label="Forçar notificação de pausa"
               >
-                <Bell className="w-4 h-4 mr-2" /> Simular Lembrete (N03)
+                <Bell className="w-5 h-5 mr-2" /> Simular Notificação
               </Button>
-            </div>
+            </section>
           )}
 
           {currentState === 'habit-trigger' && (
-            <div className="animate-slide-up flex flex-col items-center h-full justify-center w-full">
-              <h2 className="text-2xl font-medium mb-12">Momento de oxigenar a mente</h2>
+            <section className="animate-slide-up flex flex-col items-center h-full justify-center w-full">
+              <h2 className="text-2xl font-bold mb-12">Momento de oxigenar a mente</h2>
               <BreathingCircle isActive={true} />
-              <div className="mt-auto w-full flex flex-col gap-3">
+              <div className="mt-auto w-full flex flex-col gap-4">
                 <Button
                   onClick={startAssessment}
-                  className="w-full h-12 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                  className="w-full h-14 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                  aria-label="Fazer avaliação de bem-estar"
                 >
-                  Fazer Avaliação (SOC-13)
+                  Fazer Avaliação
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={() => setCurrentState('idle')}
-                  className="w-full h-12 rounded-full text-muted-foreground font-medium"
+                  className="w-full h-12 rounded-full text-muted-foreground font-bold text-base"
                 >
                   Agora não posso
                 </Button>
               </div>
-            </div>
+            </section>
           )}
 
           {currentState === 'soc-assessment' && assessmentOrder.length > 0 && (
-            <div className="animate-fade-in flex flex-col items-center h-full justify-center w-full">
-              <div className="text-xs font-bold text-primary uppercase tracking-wider mb-8">
+            <section className="animate-fade-in flex flex-col items-center h-full justify-center w-full">
+              <div
+                className="text-sm font-bold text-primary uppercase tracking-wider mb-8"
+                aria-live="polite"
+              >
                 Questão {currentQ + 1} de {assessmentOrder.length}
               </div>
-              <p className="text-xl text-foreground font-medium mb-12 text-balance">
+              <h3 className="text-xl text-foreground font-bold mb-12 text-balance leading-tight">
                 {assessmentOrder[currentQ].text}
-              </p>
+              </h3>
               <div
                 className="w-full mt-auto mb-16 opacity-100 transition-opacity"
                 style={{ opacity: isSubmitting ? 0.5 : 1 }}
@@ -220,56 +249,61 @@ export default function EmployeeApp() {
                   rightLabel="Concordo"
                 />
               </div>
-            </div>
+            </section>
           )}
 
           {currentState === 'habit-suggestion' && (
-            <div className="animate-fade-in flex flex-col items-center h-full justify-center w-full">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <section className="animate-fade-in flex flex-col items-center h-full justify-center w-full">
+              <div
+                className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6"
+                aria-hidden="true"
+              >
                 <Activity className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-xl font-bold mb-2">Sugestão de Pausa</h2>
+              <h2 className="text-2xl font-bold mb-2">Sugestão de Pausa</h2>
               {suggestedHabit ? (
                 <div className="bg-secondary/20 p-6 rounded-2xl w-full border border-border mb-8 text-left">
-                  <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">
+                  <div className="text-sm font-bold text-primary uppercase tracking-wider mb-2">
                     {suggestedHabit.category} • {suggestedHabit.duration_minutes} min
                   </div>
-                  <h3 className="text-lg font-medium text-foreground mb-2">
-                    {suggestedHabit.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h3 className="text-xl font-bold text-foreground mb-2">{suggestedHabit.title}</h3>
+                  <p className="text-base text-muted-foreground leading-relaxed">
                     {suggestedHabit.description}
                   </p>
                 </div>
               ) : (
-                <p className="text-muted-foreground mb-8">Carregando sugestão...</p>
+                <p className="text-base text-muted-foreground mb-8">Carregando sugestão...</p>
               )}
 
               <div className="w-full mt-auto flex flex-col gap-3">
                 <Button
                   onClick={() => handleHabitAction(true)}
-                  className="w-full h-12 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                  className="w-full h-14 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                  aria-label="Iniciar e concluir hábito"
                 >
-                  <PlayCircle className="mr-2 w-5 h-5" /> Iniciar e Concluir
+                  <PlayCircle className="mr-2 w-6 h-6" /> Iniciar e Concluir
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => handleHabitAction(false)}
-                  className="w-full h-12 text-lg rounded-full text-foreground border-border hover:bg-secondary font-medium"
+                  className="w-full h-14 text-lg rounded-full text-foreground border-border hover:bg-secondary font-bold"
                 >
-                  <XCircle className="mr-2 w-5 h-5" /> Pular desta vez
+                  <XCircle className="mr-2 w-6 h-6" /> Pular desta vez
                 </Button>
               </div>
-            </div>
+            </section>
           )}
 
           {currentState === 'feedback' && (
-            <div className="animate-fade-in-up flex flex-col items-center h-full justify-center w-full">
-              <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-6 animate-pulse-ring">
+            <section className="animate-fade-in-up flex flex-col items-center h-full justify-center w-full">
+              <div
+                className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-6 animate-pulse-ring"
+                aria-hidden="true"
+              >
                 <Check className="w-10 h-10 text-primary" />
               </div>
-              <h2 className="text-2xl font-medium text-primary mb-2">+10 pontos de energia</h2>
-              <p className="text-muted-foreground text-sm mb-8 text-center">
+              <h2 className="text-2xl font-bold text-primary mb-2">+10 pontos de energia</h2>
+              <p className="text-base text-muted-foreground mb-8 text-center font-medium">
                 Obrigado por cuidar de você hoje! Fogo ativo: 5 dias seguidos.
               </p>
               <Button
@@ -277,14 +311,14 @@ export default function EmployeeApp() {
                   toast({ title: 'Rotina salva', description: 'Continuando em segundo plano.' })
                   setCurrentState('idle')
                 }}
-                className="w-full h-12 rounded-full mt-auto bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
+                className="w-full h-14 rounded-full mt-auto bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg"
               >
                 Voltar ao Trabalho
               </Button>
-            </div>
+            </section>
           )}
         </CardContent>
       </Card>
-    </div>
+    </main>
   )
 }
