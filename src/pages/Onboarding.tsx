@@ -8,22 +8,165 @@ import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
 import { toast } from 'sonner'
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
 
-const SOC13_QUESTIONS = [
-  '1. Quando você fala com as pessoas, você tem a sensação de que elas não o(a) compreendem.',
-  '2. No passado, quando você teve que fazer uma coisa que dependia de você, ou de outras pessoas, você teve a sensação de que...',
-  '3. Você tem a sensação de que não sabe o que vai acontecer no seu dia-a-dia.',
-  '4. Você tem a sensação de que a sua rotina diária é uma fonte de prazer e satisfação.',
-  '5. Você tem a sensação de que tem sido tratado(a) de forma injusta.',
-  '6. No passado, você se sentiu decepcionado(a) com pessoas em quem você confiava.',
-  '7. Quando coisas ruins acontecem, você percebe que...',
-  '8. Até que ponto você tem a sensação de que os seus sentimentos e as suas ideias não importam ou não fazem sentido.',
-  '9. Você tem a sensação de que muitas coisas na sua vida não têm sentido ou importância.',
-  '10. No passado, você teve a sensação de que não sabia exatamente o que fazer com as coisas que aconteciam com você.',
-  '11. Você tem a sensação de que não tem o controle sobre as coisas que acontecem com você.',
-  '12. Você tem a sensação de que as coisas que você faz no dia-a-dia não fazem sentido.',
-  '13. Até que ponto você tem a sensação de que, no futuro, tudo vai dar certo para você.',
+const SOC13_QUESTIONS_FULL = [
+  {
+    text: '1. Você tem a sensação de que não se importa muito com o que acontece ao seu redor?',
+    options: [
+      { value: 1, label: 'Nunca' },
+      { value: 2, label: 'Quase nunca' },
+      { value: 3, label: 'Raramente' },
+      { value: 4, label: 'Ocasionalmente' },
+      { value: 5, label: 'Frequentemente' },
+      { value: 6, label: 'Muito frequentemente' },
+      { value: 7, label: 'Sempre' },
+    ],
+  },
+  {
+    text: '2. Você já foi surpreendido pelo comportamento de pessoas que achava conhecer bem?',
+    options: [
+      { value: 1, label: 'Nunca aconteceu' },
+      { value: 2, label: 'Quase nunca' },
+      { value: 3, label: 'Raramente' },
+      { value: 4, label: 'Ocasionalmente' },
+      { value: 5, label: 'Frequentemente' },
+      { value: 6, label: 'Quase sempre' },
+      { value: 7, label: 'Sempre aconteceu' },
+    ],
+  },
+  {
+    text: '3. Já aconteceu de pessoas em quem você confiava o decepcionarem?',
+    options: [
+      { value: 1, label: 'Nunca aconteceu' },
+      { value: 2, label: 'Quase nunca' },
+      { value: 3, label: 'Raramente' },
+      { value: 4, label: 'Ocasionalmente' },
+      { value: 5, label: 'Frequentemente' },
+      { value: 6, label: 'Quase sempre' },
+      { value: 7, label: 'Sempre aconteceu' },
+    ],
+  },
+  {
+    text: '4. Até agora a sua vida tem:',
+    options: [
+      { value: 1, label: 'Sido sem objetivos' },
+      { value: 2, label: 'Quase sem objetivos' },
+      { value: 3, label: 'Poucos objetivos' },
+      { value: 4, label: 'Alguns objetivos' },
+      { value: 5, label: 'Objetivos moderados' },
+      { value: 6, label: 'Objetivos claros' },
+      { value: 7, label: 'Objetivos muito claros' },
+    ],
+  },
+  {
+    text: '5. Você tem a sensação de que é tratado injustamente?',
+    options: [
+      { value: 1, label: 'Nunca' },
+      { value: 2, label: 'Quase nunca' },
+      { value: 3, label: 'Raramente' },
+      { value: 4, label: 'Ocasionalmente' },
+      { value: 5, label: 'Frequentemente' },
+      { value: 6, label: 'Muito frequentemente' },
+      { value: 7, label: 'Sempre' },
+    ],
+  },
+  {
+    text: '6. Você tem a sensação de estar em uma situação desconhecida e não saber o que fazer?',
+    options: [
+      { value: 1, label: 'Nunca' },
+      { value: 2, label: 'Quase nunca' },
+      { value: 3, label: 'Raramente' },
+      { value: 4, label: 'Ocasionalmente' },
+      { value: 5, label: 'Frequentemente' },
+      { value: 6, label: 'Muito frequentemente' },
+      { value: 7, label: 'Sempre' },
+    ],
+  },
+  {
+    text: '7. Fazer as coisas que você faz no dia a dia é:',
+    options: [
+      { value: 1, label: 'Muita dor e aborrecimento' },
+      { value: 2, label: 'Dor e aborrecimento' },
+      { value: 3, label: 'Pouco prazer' },
+      { value: 4, label: 'Neutro' },
+      { value: 5, label: 'Algum prazer e satisfação' },
+      { value: 6, label: 'Prazer e satisfação' },
+      { value: 7, label: 'Muito prazer e satisfação' },
+    ],
+  },
+  {
+    text: '8. Você tem sentimentos ou ideias muito confusas?',
+    options: [
+      { value: 1, label: 'Nunca' },
+      { value: 2, label: 'Quase nunca' },
+      { value: 3, label: 'Raramente' },
+      { value: 4, label: 'Ocasionalmente' },
+      { value: 5, label: 'Frequentemente' },
+      { value: 6, label: 'Muito frequentemente' },
+      { value: 7, label: 'Sempre' },
+    ],
+  },
+  {
+    text: '9. Você acha que não consegue controlar o que acontece?',
+    options: [
+      { value: 1, label: 'Nunca' },
+      { value: 2, label: 'Quase nunca' },
+      { value: 3, label: 'Raramente' },
+      { value: 4, label: 'Ocasionalmente' },
+      { value: 5, label: 'Frequentemente' },
+      { value: 6, label: 'Muito frequentemente' },
+      { value: 7, label: 'Sempre' },
+    ],
+  },
+  {
+    text: '10. Você já sentiu que não faz sentido continuar tentando?',
+    options: [
+      { value: 1, label: 'Nunca' },
+      { value: 2, label: 'Quase nunca' },
+      { value: 3, label: 'Raramente' },
+      { value: 4, label: 'Ocasionalmente' },
+      { value: 5, label: 'Frequentemente' },
+      { value: 6, label: 'Muito frequentemente' },
+      { value: 7, label: 'Sempre' },
+    ],
+  },
+  {
+    text: '11. As coisas que você faz no dia a dia fazem sentido?',
+    options: [
+      { value: 1, label: 'Nunca fazem sentido' },
+      { value: 2, label: 'Quase nunca' },
+      { value: 3, label: 'Raramente' },
+      { value: 4, label: 'Ocasionalmente' },
+      { value: 5, label: 'Frequentemente' },
+      { value: 6, label: 'Quase sempre' },
+      { value: 7, label: 'Sempre fazem sentido' },
+    ],
+  },
+  {
+    text: '12. Você tem a sensação de que os seus sentimentos são difíceis de controlar?',
+    options: [
+      { value: 1, label: 'Nunca' },
+      { value: 2, label: 'Quase nunca' },
+      { value: 3, label: 'Raramente' },
+      { value: 4, label: 'Ocasionalmente' },
+      { value: 5, label: 'Frequentemente' },
+      { value: 6, label: 'Muito frequentemente' },
+      { value: 7, label: 'Sempre' },
+    ],
+  },
+  {
+    text: '13. Você se sente confuso sobre a sua vida em geral?',
+    options: [
+      { value: 1, label: 'Nunca' },
+      { value: 2, label: 'Quase nunca' },
+      { value: 3, label: 'Raramente' },
+      { value: 4, label: 'Ocasionalmente' },
+      { value: 5, label: 'Frequentemente' },
+      { value: 6, label: 'Muito frequentemente' },
+      { value: 7, label: 'Sempre' },
+    ],
+  },
 ]
 
 export default function Onboarding() {
@@ -41,9 +184,26 @@ export default function Onboarding() {
   })
 
   const [socResponses, setSocResponses] = useState<Record<number, number>>({})
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 
   const handleNext = () => setStep((s) => s + 1)
   const handlePrev = () => setStep((s) => s - 1)
+
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex === SOC13_QUESTIONS_FULL.length - 1) {
+      handleFinish()
+    } else {
+      setCurrentQuestionIndex((i) => i + 1)
+    }
+  }
+
+  const handlePrevQuestion = () => {
+    if (currentQuestionIndex === 0) {
+      handlePrev()
+    } else {
+      setCurrentQuestionIndex((i) => i - 1)
+    }
+  }
 
   const handleFinish = async () => {
     if (!user) return
@@ -84,13 +244,19 @@ export default function Onboarding() {
         })
       }
 
-      const socPromises = Object.entries(socResponses).map(([qIndex, val]) =>
-        pb.collection('soc13_responses').create({
+      const INVERTED_INDICES = [0, 1, 2, 6, 9]
+
+      const socPromises = Object.entries(socResponses).map(([qIndex, val]) => {
+        const index = parseInt(qIndex)
+        const calculated_score = INVERTED_INDICES.includes(index) ? 8 - val : val
+
+        return pb.collection('soc13_responses').create({
           user_id: user.id,
-          question_index: parseInt(qIndex),
+          question_index: index,
           raw_value: val,
-        }),
-      )
+          calculated_score: calculated_score,
+        })
+      })
       await Promise.all(socPromises)
 
       toast.success('Onboarding concluído com sucesso!')
@@ -104,7 +270,7 @@ export default function Onboarding() {
 
   return (
     <div className="flex-1 flex items-center justify-center p-4 sm:p-6 w-full">
-      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="max-w-4xl w-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="flex bg-slate-100 h-2">
           <div
             className="bg-indigo-600 h-full transition-all duration-500"
@@ -114,7 +280,7 @@ export default function Onboarding() {
 
         <div className="p-8 sm:p-12">
           {step === 1 && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
               <div>
                 <h1 className="text-3xl font-black text-slate-900 tracking-tight">Bem-vindo(a)!</h1>
                 <p className="text-slate-500 mt-2">Vamos começar conhecendo você melhor.</p>
@@ -144,7 +310,7 @@ export default function Onboarding() {
           )}
 
           {step === 2 && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
               <div>
                 <h1 className="text-3xl font-black text-slate-900 tracking-tight">Sua Empresa</h1>
                 <p className="text-slate-500 mt-2">Onde você trabalha atualmente?</p>
@@ -203,7 +369,7 @@ export default function Onboarding() {
           )}
 
           {step === 3 && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
               <div>
                 <h1 className="text-3xl font-black text-slate-900 tracking-tight">Seus Hábitos</h1>
                 <p className="text-slate-500 mt-2">Como é a sua rotina de pausas no trabalho?</p>
@@ -255,65 +421,105 @@ export default function Onboarding() {
           )}
 
           {step === 4 && (
-            <div className="space-y-6 animate-fade-in flex flex-col max-h-[75vh]">
+            <div className="space-y-6 animate-fade-in flex flex-col min-h-[400px]">
               <div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-                  Avaliação SOC-13
-                </h1>
-                <p className="text-slate-500 mt-2">
-                  Por favor, responda às 13 afirmações abaixo (1 - Nunca a 7 - Sempre). Isso criará
-                  sua base para avaliações salutogênicas.
+                <div className="flex justify-between items-center mb-2">
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                    Avaliação SOC-13
+                  </h1>
+                  <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                    {currentQuestionIndex + 1} de 13
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-6">
+                  <div
+                    className="bg-indigo-600 h-full transition-all duration-300"
+                    style={{ width: `${((currentQuestionIndex + 1) / 13) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xl font-medium text-slate-800 mt-2 min-h-[3rem]">
+                  {SOC13_QUESTIONS_FULL[currentQuestionIndex].text}
                 </p>
               </div>
 
-              <ScrollArea className="flex-1 -mx-4 px-4 border-y border-slate-100 my-4 py-4 min-h-[350px]">
-                <div className="space-y-8">
-                  {SOC13_QUESTIONS.map((q, index) => (
-                    <div key={index} className="space-y-4">
-                      <Label className="text-[15px] font-semibold text-slate-800 leading-snug">
-                        {q}
-                      </Label>
-                      <div className="flex justify-between items-center gap-2 max-w-md mx-auto sm:mx-0">
-                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                          NUNCA
-                        </span>
-                        {[1, 2, 3, 4, 5, 6, 7].map((val) => (
-                          <button
-                            key={val}
-                            onClick={() => setSocResponses((prev) => ({ ...prev, [index]: val }))}
-                            className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                              socResponses[index] === val
-                                ? 'bg-indigo-600 text-white shadow-md scale-110'
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                            }`}
+              <div className="flex-1 flex flex-col justify-center my-6">
+                <RadioGroup
+                  value={socResponses[currentQuestionIndex]?.toString()}
+                  onValueChange={(val) =>
+                    setSocResponses((prev) => ({ ...prev, [currentQuestionIndex]: parseInt(val) }))
+                  }
+                  className="grid grid-cols-1 sm:grid-cols-7 gap-3"
+                >
+                  {SOC13_QUESTIONS_FULL[currentQuestionIndex].options.map((opt) => {
+                    const isSelected = socResponses[currentQuestionIndex] === opt.value
+                    return (
+                      <div key={opt.value} className="relative h-full">
+                        <RadioGroupItem
+                          value={opt.value.toString()}
+                          id={`q${currentQuestionIndex}-o${opt.value}`}
+                          className="peer sr-only"
+                        />
+                        <Label
+                          htmlFor={`q${currentQuestionIndex}-o${opt.value}`}
+                          className={cn(
+                            'flex sm:flex-col items-center sm:justify-start gap-4 sm:gap-3 p-4 sm:px-2 sm:py-5 rounded-xl border-2 cursor-pointer transition-all w-full h-full text-left sm:text-center select-none',
+                            isSelected
+                              ? 'border-indigo-600 bg-indigo-50/50 shadow-sm'
+                              : 'border-slate-100 bg-white hover:border-indigo-200 hover:bg-slate-50',
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              'w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full flex items-center justify-center text-base sm:text-lg font-bold transition-colors',
+                              isSelected
+                                ? 'bg-indigo-600 text-white shadow-md'
+                                : 'bg-slate-100 text-slate-500',
+                            )}
                           >
-                            {val}
-                          </button>
-                        ))}
-                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                          SEMPRE
-                        </span>
+                            {opt.value}
+                          </div>
+                          <span
+                            className={cn(
+                              'text-sm font-medium leading-tight mt-1',
+                              isSelected ? 'text-indigo-900 font-bold' : 'text-slate-600',
+                            )}
+                          >
+                            {opt.label}
+                          </span>
+                        </Label>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
+                    )
+                  })}
+                </RadioGroup>
+              </div>
 
-              <div className="flex gap-4 pt-2">
-                <Button onClick={handlePrev} variant="outline" className="w-1/3 h-12 shrink-0">
+              <div className="flex gap-4 pt-4 border-t border-slate-100">
+                <Button
+                  onClick={handlePrevQuestion}
+                  variant="outline"
+                  className="w-1/3 h-12 shrink-0 text-lg"
+                >
                   <ArrowLeft className="w-5 h-5 mr-2" /> Voltar
                 </Button>
                 <Button
-                  onClick={handleFinish}
-                  disabled={isSaving || Object.keys(socResponses).length < 13}
-                  className="w-2/3 h-12 text-lg bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+                  onClick={handleNextQuestion}
+                  disabled={socResponses[currentQuestionIndex] === undefined || isSaving}
+                  className={cn(
+                    'w-2/3 h-12 text-lg shrink-0',
+                    currentQuestionIndex === 12
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : '',
+                  )}
                 >
                   {isSaving ? (
                     <Loader2 className="animate-spin w-5 h-5 mr-2" />
-                  ) : (
+                  ) : currentQuestionIndex === 12 ? (
                     <CheckCircle2 className="w-5 h-5 mr-2" />
+                  ) : null}
+                  {isSaving ? 'Salvando...' : currentQuestionIndex === 12 ? 'Finalizar' : 'Próxima'}
+                  {currentQuestionIndex !== 12 && !isSaving && (
+                    <ArrowRight className="w-5 h-5 ml-2" />
                   )}
-                  {isSaving ? 'Salvando...' : 'Finalizar'}
                 </Button>
               </div>
             </div>
