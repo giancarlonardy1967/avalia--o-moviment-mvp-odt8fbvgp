@@ -2,6 +2,34 @@
  * SOC-13 Core Logic and Algorithms
  */
 
+export const SOC13_QUESTIONS = [
+  {
+    id: 'P1',
+    text: 'Você tem a sensação de que não se importa muito com o que acontece ao seu redor?',
+  },
+  {
+    id: 'P2',
+    text: 'Você já foi surpreendido pelo comportamento de pessoas que achava conhecer bem?',
+  },
+  { id: 'P3', text: 'Já aconteceu de pessoas em quem você confiava o decepcionarem?' },
+  {
+    id: 'P4',
+    text: 'Até agora a sua vida tem: não tido objetivos claros (1) / tido objetivos claros (7)?',
+  },
+  { id: 'P5', text: 'Você tem a sensação de que é tratado injustamente?' },
+  {
+    id: 'P6',
+    text: 'Você tem a sensação de estar em uma situação desconhecida e não saber o que fazer?',
+  },
+  { id: 'P7', text: 'Fazer as coisas que você faz no dia a dia é fonte de prazer e satisfação?' },
+  { id: 'P8', text: 'Você tem sentimentos ou ideias muito confusas?' },
+  { id: 'P9', text: 'Você acha que não consegue controlar o que acontece?' },
+  { id: 'P10', text: 'Você já sentiu que não faz sentido continuar tentando?' },
+  { id: 'P11', text: 'As coisas que você faz no dia a dia fazem sentido?' },
+  { id: 'P12', text: 'Você tem a sensação de que os seus sentimentos são difíceis de controlar?' },
+  { id: 'P13', text: 'Você se sente confuso sobre a sua vida em geral?' },
+]
+
 // Items that require mathematical inversion (8 - value)
 const INVERTED_ITEMS = ['P1', 'P2', 'P3', 'P7', 'P10']
 

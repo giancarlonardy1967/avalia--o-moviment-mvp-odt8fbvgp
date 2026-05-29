@@ -65,7 +65,7 @@ export default function Onboarding() {
               <Activity size={56} className="text-primary" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-balance leading-tight">
-              Este é o seu espaço de respiro no trabalho.
+              Bem-vindo ao Moviment. Este é o seu espaço de respiro no trabalho.
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground px-2">
               Sem cobranças, sem metas agressivas. Apenas pequenas pausas para você focar no seu
@@ -201,7 +201,7 @@ export default function Onboarding() {
               disabled={isSaving}
             >
               {isSaving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : null}
-              {isSaving ? 'Salvando...' : 'Permitir Acesso'}
+              {isSaving ? 'Salvando...' : 'Acessar o Moviment'}
             </Button>
           </div>
         )}
