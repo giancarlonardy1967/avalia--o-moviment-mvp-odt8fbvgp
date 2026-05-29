@@ -25,100 +25,76 @@ import {
   Cell,
 } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { toast } from 'sonner'
 
 export default function HrDashboard() {
   const { user } = useAuth()
-  const [socData, setSocData] = useState<any[]>([])
-  const [habitData, setHabitData] = useState<any[]>([])
-  const [profiles, setProfiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  const [analytics, setAnalytics] = useState<{
+    count: number
+    socData: any[]
+    habitData: any[]
+  } | null>(null)
+  const [deptInfo, setDeptInfo] = useState<{
+    departments: string[]
+    teams: string[]
+    deptTeams: Record<string, string[]>
+  }>({ departments: [], teams: [], deptTeams: {} })
 
   const [selectedDept, setSelectedDept] = useState<string>('all')
   const [selectedTeam, setSelectedTeam] = useState<string>('all')
 
-  const fetchData = async () => {
+  const fetchDepts = async () => {
     try {
-      const [socRes, habitRes, profRes] = await Promise.all([
-        pb.collection('soc13_responses').getFullList({
-          fields: 'id,created,calculated_score,user_id',
-          sort: 'created',
-        }),
-        pb.collection('micro_habits_logs').getFullList({
-          fields: 'id,created,completed,user_id',
-          sort: 'created',
-        }),
-        pb.collection('employee_profiles').getFullList({
-          fields: 'id,user_id,department,team',
-        }),
-      ])
-      setSocData(socRes)
-      setHabitData(habitRes)
-      setProfiles(profRes)
-    } catch (error) {
-      console.error('Failed to fetch HR data', error)
+      const res = await pb.send('/backend/v1/hr/departments', { method: 'GET' })
+      setDeptInfo(res)
+    } catch {
+      /* intentionally ignored */
+    }
+  }
+
+  const fetchAnalytics = async () => {
+    setLoading(true)
+    setErrorMsg(null)
+    try {
+      const res = await pb.send(
+        `/backend/v1/hr/analytics?dept=${encodeURIComponent(selectedDept)}&team=${encodeURIComponent(selectedTeam)}`,
+        { method: 'GET' },
+      )
+      setAnalytics(res)
+    } catch (error: any) {
+      if (error.status === 400 || error.status === 403) {
+        setErrorMsg(error.message || 'Dados insuficientes para preservar anonimato')
+      } else {
+        setErrorMsg('Erro ao carregar dados')
+      }
+      setAnalytics(null)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    if (user) fetchData()
+    if (user) fetchDepts()
   }, [user])
 
+  useEffect(() => {
+    if (user) fetchAnalytics()
+  }, [user, selectedDept, selectedTeam])
+
   useRealtime('soc13_responses', () => {
-    if (user) fetchData()
+    if (user) fetchAnalytics()
   })
-
   useRealtime('micro_habits_logs', () => {
-    if (user) fetchData()
+    if (user) fetchAnalytics()
   })
-
-  useRealtime('employee_profiles', () => {
-    if (user) fetchData()
-  })
-
-  const departments = useMemo(() => {
-    const depts = new Set(profiles.map((p) => p.department).filter(Boolean))
-    return Array.from(depts).sort()
-  }, [profiles])
-
-  const teams = useMemo(() => {
-    const filtered =
-      selectedDept !== 'all' ? profiles.filter((p) => p.department === selectedDept) : profiles
-    const ts = new Set(filtered.map((p) => p.team).filter(Boolean))
-    return Array.from(ts).sort()
-  }, [profiles, selectedDept])
-
-  const filteredProfiles = useMemo(() => {
-    return profiles.filter((p) => {
-      if (selectedDept !== 'all' && p.department !== selectedDept) return false
-      if (selectedTeam !== 'all' && p.team !== selectedTeam) return false
-      return true
-    })
-  }, [profiles, selectedDept, selectedTeam])
-
-  const validUserIds = useMemo(() => {
-    if (selectedDept === 'all' && selectedTeam === 'all') {
-      const allIds = new Set([...socData.map((d) => d.user_id), ...habitData.map((d) => d.user_id)])
-      return allIds
-    }
-    return new Set(filteredProfiles.map((p) => p.user_id).filter(Boolean))
-  }, [filteredProfiles, selectedDept, selectedTeam, socData, habitData])
-
-  const hasEnoughData = validUserIds.size >= 5
-
-  const filteredSocData = useMemo(() => {
-    return socData.filter((d) => validUserIds.has(d.user_id))
-  }, [socData, validUserIds])
-
-  const filteredHabitData = useMemo(() => {
-    return habitData.filter((d) => validUserIds.has(d.user_id))
-  }, [habitData, validUserIds])
 
   const chartData = useMemo(() => {
-    if (!hasEnoughData) return []
+    if (!analytics || !analytics.socData) return []
     const grouped: Record<string, { total: number; count: number }> = {}
-    filteredSocData.forEach((item) => {
+    analytics.socData.forEach((item) => {
       if (item.calculated_score === undefined || item.calculated_score === null) return
       const date = new Date(item.created).toLocaleDateString()
       if (!grouped[date]) grouped[date] = { total: 0, count: 0 }
@@ -129,13 +105,13 @@ export default function HrDashboard() {
       date,
       score: data.total / data.count,
     }))
-  }, [filteredSocData, hasEnoughData])
+  }, [analytics])
 
   const habitStats = useMemo(() => {
-    if (!hasEnoughData) return []
+    if (!analytics || !analytics.habitData) return []
     let completed = 0
     let missed = 0
-    filteredHabitData.forEach((item) => {
+    analytics.habitData.forEach((item) => {
       if (item.completed) completed++
       else missed++
     })
@@ -143,26 +119,26 @@ export default function HrDashboard() {
       { name: 'Concluídos', value: completed, color: '#A7BEA9' },
       { name: 'Ignorados', value: missed, color: '#E67E5F' },
     ]
-  }, [filteredHabitData, hasEnoughData])
+  }, [analytics])
 
   const handleDownload = () => {
+    if (!analytics || analytics.count === 0) return
     const rows = [
       ['Data', 'Indice Saude (Media)', 'Check-ins', 'Habitos Concluidos', 'Habitos Ignorados'],
     ]
 
     const dates = [
-      ...new Set(
-        [...filteredSocData, ...filteredHabitData].map((d) =>
-          new Date(d.created).toLocaleDateString(),
-        ),
-      ),
+      ...new Set([
+        ...(analytics.socData || []).map((d) => new Date(d.created).toLocaleDateString()),
+        ...(analytics.habitData || []).map((d) => new Date(d.created).toLocaleDateString()),
+      ]),
     ].sort()
 
     dates.forEach((date) => {
-      const daySoc = filteredSocData.filter(
+      const daySoc = analytics.socData.filter(
         (d) => new Date(d.created).toLocaleDateString() === date,
       )
-      const dayHabits = filteredHabitData.filter(
+      const dayHabits = analytics.habitData.filter(
         (d) => new Date(d.created).toLocaleDateString() === date,
       )
 
@@ -182,7 +158,8 @@ export default function HrDashboard() {
       ])
     })
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n')
+    const csvContent =
+      'data:text/csv;charset=utf-8,\uFEFF' + rows.map((e) => e.join(',')).join('\n')
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement('a')
     link.setAttribute('href', encodedUri)
@@ -190,7 +167,15 @@ export default function HrDashboard() {
     document.body.appendChild(link)
     link.click()
     link.remove()
+    toast.success('Relatório CSV exportado com sucesso.')
   }
+
+  const availableTeams =
+    selectedDept !== 'all' && deptInfo.deptTeams[selectedDept]
+      ? deptInfo.deptTeams[selectedDept]
+      : deptInfo.teams
+
+  const hasEnoughData = !errorMsg && analytics && analytics.count > 0
 
   return (
     <DashboardLayout>
@@ -202,7 +187,7 @@ export default function HrDashboard() {
           </div>
           <Button
             onClick={handleDownload}
-            disabled={!hasEnoughData}
+            disabled={!hasEnoughData || loading}
             className="bg-azul-ar text-foreground hover:bg-azul-ar/80"
           >
             <Download className="mr-2 h-4 w-4" /> Exportar Compliance (CSV)
@@ -226,7 +211,7 @@ export default function HrDashboard() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                {departments.map((d) => (
+                {deptInfo.departments.map((d) => (
                   <SelectItem key={d} value={d}>
                     {d}
                   </SelectItem>
@@ -243,7 +228,7 @@ export default function HrDashboard() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
-                {teams.map((t) => (
+                {availableTeams.map((t) => (
                   <SelectItem key={t} value={t}>
                     {t}
                   </SelectItem>
@@ -253,15 +238,38 @@ export default function HrDashboard() {
           </div>
         </div>
 
+        {errorMsg && (
+          <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg flex items-start gap-3">
+            <ShieldAlert className="w-5 h-5 text-orange-500 mt-0.5" />
+            <div>
+              <h4 className="text-orange-800 font-bold text-sm">
+                Privacidade Protegida (K-Anonymity)
+              </h4>
+              <p className="text-orange-700 text-sm mt-1">{errorMsg}</p>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-azul-ar border-0 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Check-ins Totais</CardTitle>
+              <CardTitle className="text-sm font-medium">Colaboradores</CardTitle>
               <Activity className="h-4 w-4 text-salvia" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {hasEnoughData ? filteredSocData.length : '-'}
+                {hasEnoughData && analytics ? analytics.count : '-'}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-salvia/20 border-0 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Check-ins SOC-13</CardTitle>
+              <Activity className="h-4 w-4 text-salvia" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {hasEnoughData && analytics ? analytics.socData.length : '-'}
               </div>
             </CardContent>
           </Card>
@@ -304,11 +312,7 @@ export default function HrDashboard() {
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <ShieldAlert className="h-8 w-8" />
                     <p className="font-medium text-sm">
-                      Dados insuficientes para exibição anonimizada
-                    </p>
-                    <p className="text-xs max-w-[250px]">
-                      O grupo selecionado possui menos de 5 respondentes. Por diretrizes de
-                      privacidade, os dados foram ocultados.
+                      Dados ocultados por diretrizes de privacidade
                     </p>
                   </div>
                 </div>
@@ -351,11 +355,7 @@ export default function HrDashboard() {
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <ShieldAlert className="h-8 w-8" />
                     <p className="font-medium text-sm">
-                      Dados insuficientes para exibição anonimizada
-                    </p>
-                    <p className="text-xs max-w-[250px]">
-                      O grupo selecionado possui menos de 5 respondentes. Por diretrizes de
-                      privacidade, os dados foram ocultados.
+                      Dados ocultados por diretrizes de privacidade
                     </p>
                   </div>
                 </div>

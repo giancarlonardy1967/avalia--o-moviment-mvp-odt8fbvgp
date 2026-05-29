@@ -4,11 +4,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
 import { toast } from 'sonner'
-import { Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, Shield, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { BreathingCircle } from '@/components/BreathingCircle'
 
 const SOC13_QUESTIONS_FULL = [
   {
@@ -95,6 +103,7 @@ export default function Onboarding() {
   const [socResponses, setSocResponses] = useState<Record<number, number>>({})
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [saveError, setSaveError] = useState(false)
+  const [breathingActive, setBreathingActive] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -127,9 +136,7 @@ export default function Onboarding() {
 
     while (retries > 0 && !success) {
       try {
-        if (!pb.authStore.isValid) {
-          throw new Error('Sessão expirada. Recarregue a página.')
-        }
+        if (!pb.authStore.isValid) throw new Error('Sessão expirada. Recarregue a página.')
 
         try {
           const existing = await pb
@@ -158,15 +165,8 @@ export default function Onboarding() {
       } catch (err: any) {
         retries -= 1
         if (retries === 0) {
-          console.error('Save error:', err)
           setSaveError(true)
-          toast.error('Erro de conexão. A resposta não foi salva.', {
-            action: {
-              label: 'Tentar novamente',
-              onClick: () => handleNextQuestion(),
-            },
-            duration: 5000,
-          })
+          toast.error('Erro de conexão. A resposta não foi salva. Tente novamente.')
           setIsSaving(false)
           return
         }
@@ -177,7 +177,7 @@ export default function Onboarding() {
     setIsSaving(false)
 
     if (currentQuestionIndex === SOC13_QUESTIONS_FULL.length - 1) {
-      await handleFinish()
+      handleNext()
     } else {
       setCurrentQuestionIndex((i) => i + 1)
     }
@@ -194,11 +194,6 @@ export default function Onboarding() {
 
   const handleFinish = async () => {
     if (!user) return
-    if (Object.keys(socResponses).length < 13) {
-      toast.error('Por favor, responda todas as questões do SOC-13.')
-      return
-    }
-
     setIsSaving(true)
     try {
       if (formData.name) {
@@ -212,7 +207,7 @@ export default function Onboarding() {
           .getFirstListItem(`user_id = '${user.id}'`)
         profileId = existing.id
       } catch (e) {
-        // null
+        // profile might not exist
       }
 
       const profileData = {
@@ -240,9 +235,52 @@ export default function Onboarding() {
     }
   }
 
+  const PrivacyModal = () => (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 right-4 text-slate-500 hover:text-slate-800 z-20"
+        >
+          <Shield className="w-4 h-4 sm:mr-2" />{' '}
+          <span className="hidden sm:inline">Sua Privacidade</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-indigo-600" />
+            Sua Privacidade e Dados
+          </DialogTitle>
+        </DialogHeader>
+        <div className="text-sm text-slate-600 space-y-4">
+          <p>
+            Na Moviment, levamos sua privacidade a sério. Suas respostas individuais da avaliação
+            SOC-13
+            <strong> nunca </strong> são compartilhadas de forma identificável com o RH da sua
+            empresa.
+          </p>
+          <p>
+            Utilizamos um princípio chamado <strong>K-Anonymity</strong> (K-Anonimato). Isso
+            significa que os dados do seu departamento ou equipe só ficarão visíveis nos painéis da
+            empresa se houver um grupo de pelo menos 15 pessoas. Se o grupo for menor, os dados são
+            ocultados para garantir que você não possa ser identificado por dedução.
+          </p>
+          <p>
+            As sugestões de micro-hábitos são apenas para você e baseadas exclusivamente no seu
+            perfil de bem-estar.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+
   return (
-    <div className="flex-1 flex items-center justify-center p-4 sm:p-6 w-full">
-      <div className="max-w-4xl w-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="flex-1 flex items-center justify-center p-4 sm:p-6 w-full min-h-[calc(100vh-4rem)] bg-slate-50 relative">
+      <PrivacyModal />
+
+      <div className="max-w-3xl w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative z-10">
         <div className="flex bg-slate-100 h-2">
           <div
             className="bg-indigo-600 h-full transition-all duration-500"
@@ -250,141 +288,144 @@ export default function Onboarding() {
           />
         </div>
 
-        <div className="p-8 sm:p-12">
+        <div className="p-6 sm:p-12">
+          {/* Step 1: Acolhimento */}
           {step === 1 && (
-            <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
-              <div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Bem-vindo(a)!</h1>
-                <p className="text-slate-500 mt-2">Vamos começar conhecendo você melhor.</p>
+            <div className="space-y-6 animate-fade-in max-w-xl mx-auto">
+              <div className="text-center mb-8">
+                <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+                  <Heart className="w-8 h-8 text-indigo-600" />
+                </div>
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                  Boas-vindas ao Moviment
+                </h1>
+                <p className="text-slate-500 mt-2 text-lg">
+                  Um espaço seguro e focado no seu bem-estar diário.
+                </p>
               </div>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-base">
-                    Como você prefere ser chamado(a)?
-                  </Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Seu nome ou apelido"
-                    className="h-12 text-lg"
-                  />
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-semibold">
+                      Como você prefere ser chamado?
+                    </Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="Seu nome ou apelido"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="company" className="text-sm font-semibold">
+                      Empresa
+                    </Label>
+                    <Input
+                      id="company"
+                      value={formData.company}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      placeholder="Sua empresa"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="department" className="text-sm font-semibold">
+                      Departamento
+                    </Label>
+                    <Input
+                      id="department"
+                      value={formData.department}
+                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                      placeholder="Ex: Engenharia"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="team" className="text-sm font-semibold">
+                      Equipe / Squad
+                    </Label>
+                    <Input
+                      id="team"
+                      value={formData.team}
+                      onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                      placeholder="Ex: Frontend"
+                      className="h-11"
+                    />
+                  </div>
                 </div>
               </div>
               <Button
                 onClick={handleNext}
-                disabled={!formData.name}
-                className="w-full h-12 text-lg mt-8"
+                disabled={!formData.name || !formData.company}
+                className="w-full h-12 text-base font-bold mt-8"
               >
-                Continuar <ArrowRight className="w-5 h-5 ml-2" />
+                Começar <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
           )}
 
+          {/* Step 2: Ação Imediata */}
           {step === 2 && (
-            <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
+            <div className="space-y-6 animate-fade-in max-w-xl mx-auto text-center">
               <div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Sua Empresa</h1>
-                <p className="text-slate-500 mt-2">Onde você trabalha atualmente?</p>
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Que tal uma pausa antes de continuar?
+                </h1>
+                <p className="text-slate-500 mt-2 text-sm sm:text-base">
+                  Muitas vezes esquecemos de respirar profundamente. Acompanhe o círculo abaixo por
+                  1 minuto.
+                </p>
               </div>
-              <div className="space-y-5 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="company" className="text-base">
-                    Nome da Empresa
-                  </Label>
-                  <Input
-                    id="company"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    placeholder="Ex: Tech Corp"
-                    className="h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="department" className="text-base">
-                    Departamento
-                  </Label>
-                  <Input
-                    id="department"
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    placeholder="Ex: Engenharia"
-                    className="h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="team" className="text-base">
-                    Equipe / Squad
-                  </Label>
-                  <Input
-                    id="team"
-                    value={formData.team}
-                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                    placeholder="Ex: Frontend"
-                    className="h-12"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-4 mt-8">
-                <Button onClick={handlePrev} variant="outline" className="w-1/3 h-12">
-                  <ArrowLeft className="w-5 h-5 mr-2" /> Voltar
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  disabled={!formData.company || !formData.department}
-                  className="w-2/3 h-12 text-lg"
-                >
-                  Continuar <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </div>
-            </div>
-          )}
 
-          {step === 3 && (
-            <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
-              <div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Seus Hábitos</h1>
-                <p className="text-slate-500 mt-2">Como é a sua rotina de pausas no trabalho?</p>
+              <div
+                className="py-6 cursor-pointer"
+                onClick={() => setBreathingActive(!breathingActive)}
+              >
+                <BreathingCircle isActive={breathingActive} />
+                <p className="text-xs text-indigo-500 font-medium mt-4">
+                  Clique no círculo para {breathingActive ? 'parar' : 'iniciar'} a respiração guiada
+                </p>
               </div>
-              <div className="space-y-6 pt-4">
-                <div className="space-y-4">
-                  <Label className="text-base">
-                    Com que frequência você faz pausas conscientes durante o dia?
-                  </Label>
-                  <RadioGroup
-                    value={formData.habitsFrequency}
-                    onValueChange={(val) => setFormData({ ...formData, habitsFrequency: val })}
-                    className="flex flex-col space-y-3 mt-4"
-                  >
-                    <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 transition-colors p-4 rounded-xl border border-slate-200 cursor-pointer">
-                      <RadioGroupItem value="rarely" id="r1" />
-                      <Label htmlFor="r1" className="font-medium cursor-pointer w-full text-base">
-                        Raramente, costumo trabalhar direto
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 transition-colors p-4 rounded-xl border border-slate-200 cursor-pointer">
-                      <RadioGroupItem value="sometimes" id="r2" />
-                      <Label htmlFor="r2" className="font-medium cursor-pointer w-full text-base">
-                        Às vezes, quando lembro
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 transition-colors p-4 rounded-xl border border-slate-200 cursor-pointer">
-                      <RadioGroupItem value="frequently" id="r3" />
-                      <Label htmlFor="r3" className="font-medium cursor-pointer w-full text-base">
-                        Frequentemente, faz parte da rotina
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
+
+              <div className="text-left space-y-4 pt-4 border-t border-slate-100">
+                <Label className="text-sm font-bold text-slate-700">
+                  Com que frequência você costuma fazer pausas no trabalho?
+                </Label>
+                <RadioGroup
+                  value={formData.habitsFrequency}
+                  onValueChange={(val) => setFormData({ ...formData, habitsFrequency: val })}
+                  className="flex flex-col space-y-2"
+                >
+                  <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 cursor-pointer">
+                    <RadioGroupItem value="rarely" id="r1" />
+                    <Label htmlFor="r1" className="cursor-pointer w-full text-sm">
+                      Raramente, trabalho direto
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 cursor-pointer">
+                    <RadioGroupItem value="sometimes" id="r2" />
+                    <Label htmlFor="r2" className="cursor-pointer w-full text-sm">
+                      Às vezes, quando lembro
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 cursor-pointer">
+                    <RadioGroupItem value="frequently" id="r3" />
+                    <Label htmlFor="r3" className="cursor-pointer w-full text-sm">
+                      Frequentemente (faz parte da rotina)
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
+
               <div className="flex gap-4 mt-8">
                 <Button onClick={handlePrev} variant="outline" className="w-1/3 h-12">
-                  <ArrowLeft className="w-5 h-5 mr-2" /> Voltar
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
                 </Button>
                 <Button
                   onClick={handleNext}
                   disabled={!formData.habitsFrequency}
-                  className="w-2/3 h-12 text-lg"
+                  className="w-2/3 h-12 text-base font-bold"
                 >
                   Continuar <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
@@ -392,106 +433,141 @@ export default function Onboarding() {
             </div>
           )}
 
-          {step === 4 && (
-            <div className="space-y-6 animate-fade-in flex flex-col min-h-[400px]">
+          {/* Step 3: Calibração (SOC-13) */}
+          {step === 3 && (
+            <div className="space-y-6 animate-fade-in flex flex-col min-h-[380px]">
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                    Avaliação SOC-13
+                <div className="flex justify-between items-center mb-3">
+                  <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    Calibração de Perfil
                   </h1>
-                  <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                    Questão {currentQuestionIndex + 1} de 13
+                  <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                    {currentQuestionIndex + 1} / 13
                   </span>
                 </div>
-                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-6">
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-5">
                   <div
                     className="bg-indigo-600 h-full transition-all duration-300"
                     style={{ width: `${((currentQuestionIndex + 1) / 13) * 100}%` }}
                   />
                 </div>
-                <p className="text-base font-medium text-slate-800 mt-2 min-h-[4rem]">
+                <p className="text-sm sm:text-base font-semibold text-slate-800 mt-2 min-h-[3rem] leading-snug">
                   {SOC13_QUESTIONS_FULL[currentQuestionIndex].text}
                 </p>
               </div>
 
-              <div className="flex-1 flex flex-col justify-center my-6 max-w-2xl mx-auto w-full">
-                <RadioGroup
-                  key={currentQuestionIndex}
-                  value={socResponses[currentQuestionIndex]?.toString() || ''}
-                  onValueChange={(val) => {
-                    setSaveError(false)
-                    setSocResponses((prev) => ({ ...prev, [currentQuestionIndex]: parseInt(val) }))
-                  }}
-                  className="flex justify-between items-center w-full gap-1 sm:gap-3"
-                >
+              <div className="flex-1 flex flex-col justify-center my-4 w-full">
+                <div className="flex justify-between items-center w-full gap-1 sm:gap-2 mb-3">
                   {[1, 2, 3, 4, 5, 6, 7].map((val) => {
                     const isSelected = socResponses[currentQuestionIndex] === val
                     return (
-                      <div key={val} className="relative flex flex-col items-center flex-1">
-                        <RadioGroupItem
-                          value={val.toString()}
-                          id={`q${currentQuestionIndex}-o${val}`}
-                          className="peer sr-only"
-                        />
-                        <Label
-                          htmlFor={`q${currentQuestionIndex}-o${val}`}
-                          className={cn(
-                            'flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 cursor-pointer transition-all text-sm sm:text-base font-bold select-none',
-                            isSelected
-                              ? 'border-indigo-600 bg-indigo-600 text-white shadow-md scale-110'
-                              : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-slate-50',
-                          )}
-                        >
-                          {val}
-                        </Label>
-                      </div>
+                      <button
+                        key={val}
+                        onClick={() => {
+                          setSaveError(false)
+                          setSocResponses((prev) => ({ ...prev, [currentQuestionIndex]: val }))
+                        }}
+                        className={cn(
+                          'flex items-center justify-center flex-1 aspect-square max-w-[3rem] rounded-full border-2 transition-all text-sm sm:text-base font-bold select-none',
+                          isSelected
+                            ? 'border-indigo-600 bg-indigo-600 text-white shadow-md scale-110'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-slate-50',
+                        )}
+                      >
+                        {val}
+                      </button>
                     )
                   })}
-                </RadioGroup>
+                </div>
 
-                <div className="flex justify-between w-full mt-6 text-xs sm:text-sm font-medium text-slate-500 px-1">
-                  <span className="w-5/12 text-left leading-tight">
+                <div className="flex justify-between w-full text-[10px] sm:text-xs font-semibold text-slate-500 px-1 uppercase tracking-wider">
+                  <span className="w-5/12 text-left leading-tight text-slate-400">
                     {SOC13_QUESTIONS_FULL[currentQuestionIndex].anchor1}
                   </span>
-                  <span className="w-5/12 text-right leading-tight">
+                  <span className="w-5/12 text-right leading-tight text-slate-400">
                     {SOC13_QUESTIONS_FULL[currentQuestionIndex].anchor7}
                   </span>
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-4 border-t border-slate-100">
+              <div className="flex gap-3 sm:gap-4 pt-4 border-t border-slate-100">
                 <Button
                   onClick={handlePrevQuestion}
                   variant="outline"
-                  className="w-1/3 h-12 shrink-0 text-lg"
+                  className="w-1/3 h-12 shrink-0"
                 >
-                  <ArrowLeft className="w-5 h-5 mr-2" /> Voltar
+                  <ArrowLeft className="w-4 h-4 sm:mr-2" />{' '}
+                  <span className="hidden sm:inline">Voltar</span>
                 </Button>
                 <Button
                   onClick={handleNextQuestion}
                   disabled={socResponses[currentQuestionIndex] === undefined || isSaving}
                   className={cn(
-                    'w-2/3 h-12 text-lg shrink-0',
-                    currentQuestionIndex === 12
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : '',
+                    'w-2/3 h-12 shrink-0 font-bold',
+                    currentQuestionIndex === 12 ? 'bg-indigo-600 hover:bg-indigo-700' : '',
                   )}
                 >
-                  {isSaving ? (
-                    <Loader2 className="animate-spin w-5 h-5 mr-2" />
-                  ) : currentQuestionIndex === 12 ? (
-                    <CheckCircle2 className="w-5 h-5 mr-2" />
-                  ) : null}
+                  {isSaving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
                   {isSaving
                     ? 'Salvando...'
                     : saveError
                       ? 'Tente novamente'
                       : currentQuestionIndex === 12
-                        ? 'Finalizar'
+                        ? 'Próxima Etapa'
                         : 'Próxima'}
-                  {currentQuestionIndex !== 12 && !isSaving && (
-                    <ArrowRight className="w-5 h-5 ml-2" />
+                  {!isSaving && currentQuestionIndex !== 12 && (
+                    <ArrowRight className="w-4 h-4 ml-2" />
                   )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Integração Passiva */}
+          {step === 4 && (
+            <div className="space-y-6 animate-fade-in max-w-xl mx-auto text-center">
+              <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+              </div>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                Tudo pronto, {formData.name || 'colaborador(a)'}!
+              </h1>
+              <div className="text-left bg-slate-50 rounded-xl p-5 border border-slate-200 space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">1. Sugestões Diárias</h3>
+                  <p className="text-xs text-slate-600 mt-1">
+                    A partir de amanhã, você receberá sugestões de pausas ativas (micro-hábitos)
+                    adaptadas à sua rotina e respostas.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">2. Notificações Amigáveis</h3>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Nós o avisaremos quando for a melhor hora para sua pausa, sem interrupções
+                    invasivas.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">3. Anonimato Garantido</h3>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Suas respostas da Calibração (SOC-13) jamais serão vistas de forma individual.
+                    Aplicamos K-Anonymity para apresentar os dados ao RH apenas em grupos maiores de
+                    forma agregada.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4 pt-4">
+                <Button
+                  onClick={handleFinish}
+                  disabled={isSaving}
+                  className="w-full h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700"
+                >
+                  {isSaving ? (
+                    <Loader2 className="animate-spin w-5 h-5 mr-2" />
+                  ) : (
+                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                  )}
+                  {isSaving ? 'Finalizando...' : 'Acessar meu Dashboard'}
                 </Button>
               </div>
             </div>
