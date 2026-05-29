@@ -12,6 +12,7 @@ import {
 import { DashboardLayout } from '@/components/hr/Sidebar'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
+import { useRealtime } from '@/hooks/use-realtime'
 import {
   LineChart,
   Line,
@@ -35,33 +36,46 @@ export default function HrDashboard() {
   const [selectedDept, setSelectedDept] = useState<string>('all')
   const [selectedTeam, setSelectedTeam] = useState<string>('all')
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [socRes, habitRes, profRes] = await Promise.all([
-          pb.collection('soc13_responses').getFullList({
-            fields: 'id,created,calculated_score,user_id',
-            sort: 'created',
-          }),
-          pb.collection('micro_habits_logs').getFullList({
-            fields: 'id,created,completed,user_id',
-            sort: 'created',
-          }),
-          pb.collection('employee_profiles').getFullList({
-            fields: 'id,user_id,department,team',
-          }),
-        ])
-        setSocData(socRes)
-        setHabitData(habitRes)
-        setProfiles(profRes)
-      } catch (error) {
-        console.error('Failed to fetch HR data', error)
-      } finally {
-        setLoading(false)
-      }
+  const fetchData = async () => {
+    try {
+      const [socRes, habitRes, profRes] = await Promise.all([
+        pb.collection('soc13_responses').getFullList({
+          fields: 'id,created,calculated_score,user_id',
+          sort: 'created',
+        }),
+        pb.collection('micro_habits_logs').getFullList({
+          fields: 'id,created,completed,user_id',
+          sort: 'created',
+        }),
+        pb.collection('employee_profiles').getFullList({
+          fields: 'id,user_id,department,team',
+        }),
+      ])
+      setSocData(socRes)
+      setHabitData(habitRes)
+      setProfiles(profRes)
+    } catch (error) {
+      console.error('Failed to fetch HR data', error)
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     if (user) fetchData()
   }, [user])
+
+  useRealtime('soc13_responses', () => {
+    if (user) fetchData()
+  })
+
+  useRealtime('micro_habits_logs', () => {
+    if (user) fetchData()
+  })
+
+  useRealtime('employee_profiles', () => {
+    if (user) fetchData()
+  })
 
   const departments = useMemo(() => {
     const depts = new Set(profiles.map((p) => p.department).filter(Boolean))

@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { MunariScale } from '@/components/MunariScale'
 import { BreathingCircle } from '@/components/BreathingCircle'
 import { toast } from '@/hooks/use-toast'
+import pb from '@/lib/pocketbase/client'
+import { useAuth } from '@/hooks/use-auth'
 
 type FlowState =
   | 'onboarding-1'
@@ -22,16 +24,15 @@ export default function EmployeeFlow() {
   const [isHolding, setIsHolding] = useState(false)
   const holdTimer = useRef<NodeJS.Timeout | null>(null)
 
-  // Simulated answers store
   const [socAnswers, setSocAnswers] = useState<Record<string, number>>({})
+  const { user } = useAuth()
 
-  // Onboarding Step 2 Logic: Hold to breathe
   const startBreathing = () => {
     setIsHolding(true)
     holdTimer.current = setTimeout(() => {
       setIsHolding(false)
       setCurrentState('onboarding-3')
-    }, 4000) // 4 seconds hold
+    }, 4000)
   }
 
   const stopBreathing = () => {
@@ -39,9 +40,26 @@ export default function EmployeeFlow() {
     if (holdTimer.current) clearTimeout(holdTimer.current)
   }
 
-  const handleSocAnswer = (qId: string, value: number) => {
-    setSocAnswers((prev) => ({ ...prev, [qId]: value }))
-    // Automatically advance (Munari principle: no extra clicks)
+  const handleSocAnswer = async (qId: string, value: number) => {
+    const updatedAnswers = { ...socAnswers, [qId]: value }
+    setSocAnswers(updatedAnswers)
+
+    if (user && currentState === 'soc-question') {
+      try {
+        const fullAnswers: Record<string, number> = {}
+        for (let i = 1; i <= 13; i++) {
+          fullAnswers[`P${i}`] = i === 6 ? value : 4
+        }
+        await pb.send('/backend/v1/soc13/submit', {
+          method: 'POST',
+          body: JSON.stringify({ answers: fullAnswers }),
+          headers: { 'Content-Type': 'application/json' },
+        })
+      } catch (error) {
+        console.error('Failed to submit SOC-13 answer:', error)
+      }
+    }
+
     if (currentState === 'onboarding-3') {
       setCurrentState('onboarding-4')
     } else if (currentState === 'soc-question') {
@@ -49,21 +67,18 @@ export default function EmployeeFlow() {
     }
   }
 
-  // Simulate receiving a notification after being idle
   useEffect(() => {
     if (currentState === 'idle') {
       const timer = setTimeout(() => {
         setCurrentState('habit-trigger')
-      }, 5000) // Trigger after 5s for demo purposes
+      }, 5000)
       return () => clearTimeout(timer)
     }
   }, [currentState])
 
   return (
     <div className="min-h-screen bg-black/5 flex items-center justify-center p-4 font-sans">
-      {/* Container acting as the "App Widget" or extension pop-up */}
       <Card className="w-full max-w-sm h-[600px] shadow-2xl rounded-[24px] overflow-hidden border-0 relative bg-background flex flex-col">
-        {/* Top minimal indicator */}
         <div className="absolute top-0 left-0 w-full h-1 bg-border">
           <div
             className="h-full bg-primary transition-all duration-1000 ease-in-out"
@@ -78,7 +93,6 @@ export default function EmployeeFlow() {
         </div>
 
         <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative h-full">
-          {/* ONBOARDING 1: Acolhimento */}
           {currentState === 'onboarding-1' && (
             <div className="animate-fade-in flex flex-col items-center h-full justify-center w-full">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-8">
@@ -99,7 +113,6 @@ export default function EmployeeFlow() {
             </div>
           )}
 
-          {/* ONBOARDING 2: Ação Imediata */}
           {currentState === 'onboarding-2' && (
             <div className="animate-fade-in-up flex flex-col items-center h-full justify-center w-full">
               <h2 className="text-xl font-medium mb-2">Vamos testar a sua primeira pausa?</h2>
@@ -125,7 +138,6 @@ export default function EmployeeFlow() {
             </div>
           )}
 
-          {/* ONBOARDING 3: Calibração (SOC-13 Intro) */}
           {currentState === 'onboarding-3' && (
             <div className="animate-fade-in flex flex-col items-center h-full justify-center w-full">
               <h2 className="text-xl font-medium mb-4 leading-snug">
@@ -147,7 +159,6 @@ export default function EmployeeFlow() {
             </div>
           )}
 
-          {/* ONBOARDING 4: Pacto de Privacidade (LGPD) */}
           {currentState === 'onboarding-4' && (
             <div className="animate-fade-in flex flex-col items-center h-full justify-start w-full pt-4">
               <ShieldCheck className="w-12 h-12 text-primary mb-6" />
@@ -200,7 +211,6 @@ export default function EmployeeFlow() {
             </div>
           )}
 
-          {/* IDLE STATE (Minimized/Background) */}
           {currentState === 'idle' && (
             <div className="animate-fade-in flex flex-col items-center justify-center h-full w-full opacity-50">
               <Wind className="w-12 h-12 text-muted-foreground mb-4" />
@@ -211,7 +221,6 @@ export default function EmployeeFlow() {
             </div>
           )}
 
-          {/* HABIT TRIGGER (Tela 01) */}
           {currentState === 'habit-trigger' && (
             <div className="animate-slide-up flex flex-col items-center h-full justify-center w-full bg-background absolute inset-0 p-8 z-10">
               <h2 className="text-2xl font-medium mb-12">Momento de oxigenar a mente</h2>
@@ -236,7 +245,6 @@ export default function EmployeeFlow() {
             </div>
           )}
 
-          {/* SOC-13 QUESTION (Tela 02 - Pesquisa Invisível) */}
           {currentState === 'soc-question' && (
             <div className="animate-fade-in flex flex-col items-center h-full justify-center w-full bg-background absolute inset-0 p-8 z-20">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-8">
@@ -256,7 +264,6 @@ export default function EmployeeFlow() {
             </div>
           )}
 
-          {/* FEEDBACK (Tela 03) */}
           {currentState === 'feedback' && (
             <div className="animate-fade-in-up flex flex-col items-center h-full justify-center w-full bg-background absolute inset-0 p-8 z-30">
               <div className="w-20 h-20 bg-salvia/20 rounded-full flex items-center justify-center mb-6 animate-pulse-ring">

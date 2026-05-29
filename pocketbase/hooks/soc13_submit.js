@@ -13,6 +13,11 @@ routerAdd(
     $app.runInTransaction((txApp) => {
       for (const key in answers) {
         const val = Number(answers[key]) || 0
+        if (val < 1 || val > 7) {
+          throw new BadRequestError('Invalid raw_value', {
+            answers: new ValidationError('invalid_value', 'Value must be between 1 and 7'),
+          })
+        }
         let calc = val
         if (INVERTED_ITEMS.includes(key)) {
           calc = 8 - val
@@ -26,6 +31,10 @@ routerAdd(
         record.set('raw_value', val)
         record.set('calculated_score', calc)
         txApp.save(record)
+      }
+
+      if (totalScore < 13 || totalScore > 91) {
+        throw new BadRequestError('Total score must be between 13 and 91')
       }
 
       try {
