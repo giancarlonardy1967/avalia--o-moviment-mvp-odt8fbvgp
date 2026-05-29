@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T17:19:32.440Z",
+  "generatedAt": "2026-05-29T17:36:31.034Z",
   "collections": [
     {
       "name": "users",
@@ -58,8 +58,8 @@
         "list": "@request.auth.id != '' && (@request.auth.role = 'hr_manager' || @request.auth.role = 'admin' || user_id = @request.auth.id || @request.auth.role = 'broker_analyst')",
         "view": "user_id = @request.auth.id || @request.auth.role = 'broker_analyst'",
         "create": "@request.auth.id != ''",
-        "update": "user_id = @request.auth.id",
-        "delete": null
+        "update": "user_id = @request.auth.id || @request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
       },
       "fields": [
         {
@@ -123,8 +123,8 @@
         "list": "@request.auth.id != '' && (@request.auth.role = 'hr_manager' || @request.auth.role = 'admin' || user_id = @request.auth.id || @request.auth.role = 'broker_analyst')",
         "view": "user_id = @request.auth.id || @request.auth.role = 'broker_analyst'",
         "create": "@request.auth.id != ''",
-        "update": "user_id = @request.auth.id",
-        "delete": null
+        "update": "user_id = @request.auth.id || @request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
       },
       "fields": [
         {
