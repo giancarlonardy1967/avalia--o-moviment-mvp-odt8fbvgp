@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T16:48:06.888Z",
+  "generatedAt": "2026-05-29T17:19:32.440Z",
   "collections": [
     {
       "name": "users",
@@ -43,7 +43,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["employee", "hr_manager", "admin"]
+          "selectValues": ["employee", "hr_manager", "admin", "broker_analyst"]
         }
       ],
       "indexes": [
@@ -55,8 +55,8 @@
       "name": "employee_profiles",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (@request.auth.role = 'hr_manager' || @request.auth.role = 'admin' || user_id = @request.auth.id)",
-        "view": "user_id = @request.auth.id",
+        "list": "@request.auth.id != '' && (@request.auth.role = 'hr_manager' || @request.auth.role = 'admin' || user_id = @request.auth.id || @request.auth.role = 'broker_analyst')",
+        "view": "user_id = @request.auth.id || @request.auth.role = 'broker_analyst'",
         "create": "@request.auth.id != ''",
         "update": "user_id = @request.auth.id",
         "delete": null
@@ -100,6 +100,18 @@
           "type": "text",
           "required": false,
           "system": false
+        },
+        {
+          "name": "company_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "predictive_score",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": []
@@ -108,8 +120,8 @@
       "name": "soc13_responses",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (@request.auth.role = 'hr_manager' || @request.auth.role = 'admin' || user_id = @request.auth.id)",
-        "view": "user_id = @request.auth.id",
+        "list": "@request.auth.id != '' && (@request.auth.role = 'hr_manager' || @request.auth.role = 'admin' || user_id = @request.auth.id || @request.auth.role = 'broker_analyst')",
+        "view": "user_id = @request.auth.id || @request.auth.role = 'broker_analyst'",
         "create": "@request.auth.id != ''",
         "update": "user_id = @request.auth.id",
         "delete": null
@@ -161,8 +173,8 @@
       "name": "micro_habits_logs",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (@request.auth.role = 'hr_manager' || @request.auth.role = 'admin' || user_id = @request.auth.id)",
-        "view": "user_id = @request.auth.id",
+        "list": "@request.auth.id != '' && (@request.auth.role = 'hr_manager' || @request.auth.role = 'admin' || user_id = @request.auth.id || @request.auth.role = 'broker_analyst')",
+        "view": "user_id = @request.auth.id || @request.auth.role = 'broker_analyst'",
         "create": "@request.auth.id != ''",
         "update": "user_id = @request.auth.id",
         "delete": null
@@ -237,6 +249,53 @@
           "name": "duration_minutes",
           "type": "number",
           "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "notifications",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && user_id = @request.auth.id",
+        "create": "@request.auth.id != '' && user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "message",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "read",
+          "type": "bool",
+          "required": false,
           "system": false
         },
         {

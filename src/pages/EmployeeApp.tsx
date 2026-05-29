@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Check, Wind, Activity, PlayCircle, XCircle, Bell } from 'lucide-react'
+import { Check, Wind, Activity, PlayCircle, XCircle, Bell, BellRing } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { useRealtime } from '@/hooks/use-realtime'
 import { MunariScale } from '@/components/MunariScale'
 import { BreathingCircle } from '@/components/BreathingCircle'
 import { toast } from '@/hooks/use-toast'
@@ -24,6 +28,47 @@ export default function EmployeeApp() {
   const [currentQ, setCurrentQ] = useState(0)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [notifications, setNotifications] = useState<any[]>([])
+
+  const fetchNotifs = async () => {
+    if (!user) return
+    try {
+      const res = await pb
+        .collection('notifications')
+        .getList(1, 10, { filter: `user_id="${user.id}"`, sort: '-created' })
+      setNotifications(res.items)
+    } catch {
+      /* intentionally ignored */
+    }
+  }
+
+  useEffect(() => {
+    if (user) {
+      pb.send('/backend/v1/engagement/check', { method: 'POST' }).catch(() => {})
+      fetchNotifs()
+    }
+  }, [user])
+
+  useRealtime(
+    'notifications',
+    (e) => {
+      if (e.record.user_id === user?.id) {
+        fetchNotifs()
+      }
+    },
+    !!user,
+  )
+
+  const markAsRead = async (id: string) => {
+    try {
+      await pb.collection('notifications').update(id, { read: true })
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    } catch {
+      /* intentionally ignored */
+    }
+  }
+
+  const unreadCount = notifications.filter((n) => !n.read).length
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -164,7 +209,58 @@ export default function EmployeeApp() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans relative">
+      <div className="absolute top-6 right-6 z-50">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full w-14 h-14 relative shadow-sm bg-white"
+              aria-label="Notificações"
+            >
+              {unreadCount > 0 ? (
+                <BellRing className="w-6 h-6 text-primary" />
+              ) : (
+                <Bell className="w-6 h-6 text-slate-500" />
+              )}
+              {unreadCount > 0 && (
+                <Badge className="absolute -top-2 -right-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-500 text-white text-xs p-0 shadow-sm border-2 border-white">
+                  {unreadCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-0 mr-6 mt-2 rounded-2xl shadow-xl border-slate-200">
+            <div className="p-4 border-b border-slate-100 bg-slate-50 rounded-t-2xl">
+              <h3 className="font-bold text-lg text-slate-900">Central de Notificações</h3>
+            </div>
+            <ScrollArea className="h-[300px]">
+              {notifications.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 text-base">
+                  Nenhuma notificação no momento.
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`p-4 border-b border-slate-100 cursor-pointer transition-colors ${n.read ? 'bg-white opacity-70' : 'bg-blue-50/50 hover:bg-blue-50'}`}
+                      onClick={() => !n.read && markAsRead(n.id)}
+                    >
+                      <p className="text-base text-slate-800 leading-snug">{n.message}</p>
+                      <span className="text-xs text-slate-400 mt-2 block">
+                        {new Date(n.created).toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </PopoverContent>
+        </Popover>
+      </div>
+
       <Card
         className="w-full max-w-sm h-[600px] shadow-2xl rounded-[24px] overflow-hidden border-0 relative bg-background flex flex-col"
         role="region"

@@ -13,6 +13,7 @@ import HrDashboard from './pages/hr/Dashboard'
 import HrCompliance from './pages/hr/Compliance'
 import HrTeams from './pages/hr/Teams'
 import HrReports from './pages/hr/Reports'
+import BrokerDashboard from './pages/BrokerDashboard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 const App = () => (
@@ -36,6 +37,10 @@ const App = () => (
               <Route path="/rh/equipes" element={<HrTeams />} />
               <Route path="/rh/relatorios" element={<HrReports />} />
               <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['broker_analyst', 'admin']} />}>
+              <Route path="/broker-dashboard" element={<BrokerDashboard />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
