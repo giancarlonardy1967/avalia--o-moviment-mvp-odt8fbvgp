@@ -87,22 +87,50 @@ const SOC13_QUESTIONS_FULL = [
 ]
 
 export default function Onboarding() {
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(() => {
+    const saved = localStorage.getItem('onboarding_step')
+    return saved ? Number(saved) : 1
+  })
   const navigate = useNavigate()
   const { user } = useAuth()
 
   const [isSaving, setIsSaving] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '',
-    company: '',
-    department: '',
-    team: '',
-    checkinFrequency: 'daily',
-    privacyAccepted: true,
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem('onboarding_form')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch {
+        /* intentionally ignored */
+      }
+    }
+    return {
+      name: '',
+      company: '',
+      department: '',
+      team: '',
+      checkinFrequency: 'daily',
+      privacyAccepted: true,
+    }
   })
 
   const [socResponses, setSocResponses] = useState<Record<number, number>>({})
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(() => {
+    const saved = localStorage.getItem('onboarding_q_idx')
+    return saved ? Number(saved) : 0
+  })
+
+  useEffect(() => {
+    localStorage.setItem('onboarding_step', step.toString())
+  }, [step])
+
+  useEffect(() => {
+    localStorage.setItem('onboarding_q_idx', currentQuestionIndex.toString())
+  }, [currentQuestionIndex])
+
+  useEffect(() => {
+    localStorage.setItem('onboarding_form', JSON.stringify(formData))
+  }, [formData])
   const [saveError, setSaveError] = useState(false)
 
   const [habits, setHabits] = useState<any[]>([])
@@ -188,6 +216,7 @@ export default function Onboarding() {
     }
 
     setIsSaving(false)
+    setSaveError(false)
 
     if (currentQuestionIndex === SOC13_QUESTIONS_FULL.length - 1) {
       handleNext()
@@ -276,6 +305,10 @@ export default function Onboarding() {
         })
       }
 
+      localStorage.removeItem('onboarding_step')
+      localStorage.removeItem('onboarding_q_idx')
+      localStorage.removeItem('onboarding_form')
+
       toast.success('Onboarding concluído com sucesso!')
       navigate('/employee')
     } catch (err: any) {
@@ -338,25 +371,25 @@ export default function Onboarding() {
           />
         </div>
 
-        <div className="p-6 sm:p-10">
+        <div className="p-4 sm:p-10">
           {/* Step 1: Acolhimento */}
           {step === 1 && (
-            <div className="space-y-6 animate-fade-in max-w-xl mx-auto">
-              <div className="text-center mb-8">
-                <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-                  <Heart className="w-8 h-8 text-indigo-600" />
+            <div className="space-y-4 sm:space-y-6 animate-fade-in max-w-xl mx-auto">
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                  <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600" />
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   Boas-vindas ao Moviment
                 </h1>
-                <p className="text-slate-500 mt-2 text-sm sm:text-base">
+                <p className="text-slate-500 mt-1 sm:mt-2 text-xs sm:text-base">
                   Um espaço seguro e focado no seu bem-estar diário.
                 </p>
               </div>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="name" className="text-sm font-semibold">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="space-y-1">
+                    <Label htmlFor="name" className="text-xs sm:text-sm font-semibold">
                       Como você prefere ser chamado?
                     </Label>
                     <Input
@@ -364,11 +397,11 @@ export default function Onboarding() {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="Seu nome ou apelido"
-                      className="h-11"
+                      className="h-10 sm:h-11 text-sm"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="company" className="text-sm font-semibold">
+                  <div className="space-y-1">
+                    <Label htmlFor="company" className="text-xs sm:text-sm font-semibold">
                       Empresa
                     </Label>
                     <Input
@@ -376,11 +409,11 @@ export default function Onboarding() {
                       value={formData.company}
                       onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                       placeholder="Sua empresa"
-                      className="h-11"
+                      className="h-10 sm:h-11 text-sm"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="department" className="text-sm font-semibold">
+                  <div className="space-y-1">
+                    <Label htmlFor="department" className="text-xs sm:text-sm font-semibold">
                       Departamento
                     </Label>
                     <Input
@@ -388,11 +421,11 @@ export default function Onboarding() {
                       value={formData.department}
                       onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                       placeholder="Ex: Engenharia"
-                      className="h-11"
+                      className="h-10 sm:h-11 text-sm"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="team" className="text-sm font-semibold">
+                  <div className="space-y-1">
+                    <Label htmlFor="team" className="text-xs sm:text-sm font-semibold">
                       Equipe / Squad
                     </Label>
                     <Input
@@ -400,7 +433,7 @@ export default function Onboarding() {
                       value={formData.team}
                       onChange={(e) => setFormData({ ...formData, team: e.target.value })}
                       placeholder="Ex: Frontend"
-                      className="h-11"
+                      className="h-10 sm:h-11 text-sm"
                     />
                   </div>
                 </div>
@@ -408,29 +441,31 @@ export default function Onboarding() {
               <Button
                 onClick={handleNext}
                 disabled={!formData.name || !formData.company}
-                className="w-full h-12 text-base font-bold mt-8"
+                className="w-full h-10 sm:h-12 text-sm sm:text-base font-bold mt-6 sm:mt-8"
               >
-                Começar <ArrowRight className="w-5 h-5 ml-2" />
+                Começar <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
               </Button>
             </div>
           )}
 
           {/* Step 2: Ação Imediata */}
           {step === 2 && (
-            <div className="space-y-6 animate-fade-in max-w-xl mx-auto text-center">
+            <div className="space-y-4 sm:space-y-6 animate-fade-in max-w-xl mx-auto text-center">
               <div>
-                <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-                  <Activity className="w-8 h-8 text-indigo-600" />
+                <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                  <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600" />
                 </div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Ação Imediata</h1>
-                <p className="text-slate-500 mt-2 text-sm sm:text-base">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  Ação Imediata
+                </h1>
+                <p className="text-slate-500 mt-1 sm:mt-2 text-xs sm:text-base">
                   Selecione um micro-hábito inicial para logar hoje. É o seu primeiro passo.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6">
                 {habits.length === 0 ? (
-                  <div className="col-span-1 sm:col-span-2 text-center text-sm text-slate-500 p-4 border rounded-xl">
+                  <div className="col-span-1 sm:col-span-2 text-center text-xs sm:text-sm text-slate-500 p-4 border rounded-xl">
                     Carregando hábitos...
                   </div>
                 ) : (
@@ -439,19 +474,19 @@ export default function Onboarding() {
                       key={habit.id}
                       onClick={() => setSelectedHabit(habit.id)}
                       className={cn(
-                        'p-4 border-2 rounded-xl cursor-pointer transition-all flex flex-col items-start text-left',
+                        'p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-all flex flex-col items-start text-left',
                         selectedHabit === habit.id
                           ? 'border-indigo-600 bg-indigo-50 shadow-sm'
                           : 'border-slate-100 hover:border-indigo-300 bg-white',
                       )}
                     >
-                      <h3 className="font-bold text-slate-800 text-sm leading-tight line-clamp-1">
+                      <h3 className="font-bold text-slate-800 text-xs sm:text-sm leading-tight line-clamp-1">
                         {habit.title}
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1 flex-1 line-clamp-2">
+                      <p className="text-[10px] sm:text-xs text-slate-500 mt-1 flex-1 line-clamp-2">
                         {habit.description}
                       </p>
-                      <span className="text-xs font-semibold text-indigo-600 mt-3 bg-indigo-100 px-2 py-1 rounded-md">
+                      <span className="text-[10px] sm:text-xs font-semibold text-indigo-600 mt-2 sm:mt-3 bg-indigo-100 px-2 py-0.5 rounded-md">
                         {habit.duration_minutes} min
                       </span>
                     </div>
@@ -459,15 +494,19 @@ export default function Onboarding() {
                 )}
               </div>
 
-              <div className="flex gap-4 mt-8">
-                <Button onClick={handlePrev} variant="outline" className="w-1/3 h-12">
+              <div className="flex gap-3 sm:gap-4 mt-6 sm:mt-8">
+                <Button
+                  onClick={handlePrev}
+                  variant="outline"
+                  className="w-1/3 h-10 sm:h-12 text-xs sm:text-sm"
+                >
                   <ArrowLeft className="w-4 h-4 sm:mr-2" />{' '}
                   <span className="hidden sm:inline">Voltar</span>
                 </Button>
                 <Button
                   onClick={handleNext}
                   disabled={!selectedHabit}
-                  className="w-2/3 h-12 text-sm sm:text-base font-bold"
+                  className="w-2/3 h-10 sm:h-12 text-xs sm:text-base font-bold"
                 >
                   Continuar <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
                 </Button>
@@ -477,29 +516,29 @@ export default function Onboarding() {
 
           {/* Step 3: Calibração (SOC-13) */}
           {step === 3 && (
-            <div className="space-y-6 animate-fade-in flex flex-col min-h-[380px] max-w-xl mx-auto">
+            <div className="space-y-4 sm:space-y-6 animate-fade-in flex flex-col min-h-[320px] sm:min-h-[380px] max-w-xl mx-auto">
               <div>
-                <div className="flex justify-between items-center mb-3">
-                  <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                <div className="flex justify-between items-center mb-2 sm:mb-3">
+                  <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">
                     Calibração
                   </h1>
-                  <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                  <span className="text-[10px] sm:text-xs font-bold text-slate-500 bg-slate-100 px-2 sm:px-3 py-1 rounded-full">
                     {currentQuestionIndex + 1} / 13
                   </span>
                 </div>
-                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-4">
+                <div className="w-full bg-slate-100 h-1 sm:h-1.5 rounded-full overflow-hidden mb-3 sm:mb-4">
                   <div
                     className="bg-indigo-600 h-full transition-all duration-300"
                     style={{ width: `${((currentQuestionIndex + 1) / 13) * 100}%` }}
                   />
                 </div>
-                <p className="text-sm font-semibold text-slate-800 mt-2 min-h-[3rem] leading-snug">
+                <p className="text-xs sm:text-sm font-semibold text-slate-800 mt-2 min-h-[2.5rem] sm:min-h-[3rem] leading-snug">
                   {SOC13_QUESTIONS_FULL[currentQuestionIndex].text}
                 </p>
               </div>
 
-              <div className="flex-1 flex flex-col justify-center my-4 w-full">
-                <div className="flex justify-between items-center w-full gap-1 mb-3">
+              <div className="flex-1 flex flex-col justify-center my-2 sm:my-4 w-full">
+                <div className="flex justify-between items-center w-full gap-0.5 sm:gap-1 mb-2 sm:mb-3">
                   {[1, 2, 3, 4, 5, 6, 7].map((val) => {
                     const isSelected = socResponses[currentQuestionIndex] === val
                     return (
@@ -510,7 +549,7 @@ export default function Onboarding() {
                           setSocResponses((prev) => ({ ...prev, [currentQuestionIndex]: val }))
                         }}
                         className={cn(
-                          'flex items-center justify-center flex-1 aspect-square max-w-[2.5rem] rounded-full border-2 transition-all text-sm font-bold select-none',
+                          'flex items-center justify-center flex-1 aspect-square max-w-[2rem] sm:max-w-[2.5rem] rounded-full border-2 transition-all text-xs sm:text-sm font-bold select-none',
                           isSelected
                             ? 'border-indigo-600 bg-indigo-600 text-white shadow-md scale-110'
                             : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-slate-50',
@@ -522,7 +561,7 @@ export default function Onboarding() {
                   })}
                 </div>
 
-                <div className="flex justify-between w-full text-[10px] sm:text-xs font-medium text-slate-500 px-1 uppercase tracking-wider">
+                <div className="flex justify-between w-full text-[9px] sm:text-xs font-medium text-slate-500 px-1 uppercase tracking-wider">
                   <span className="w-5/12 text-left leading-tight text-slate-400">
                     {SOC13_QUESTIONS_FULL[currentQuestionIndex].anchor1}
                   </span>
@@ -532,11 +571,11 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-slate-100">
+              <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-100">
                 <Button
                   onClick={handlePrevQuestion}
                   variant="outline"
-                  className="w-1/3 h-12 shrink-0"
+                  className="w-1/3 h-10 sm:h-12 shrink-0 text-xs sm:text-sm"
                 >
                   <ArrowLeft className="w-4 h-4 sm:mr-2" />{' '}
                   <span className="hidden sm:inline">Voltar</span>
@@ -545,19 +584,20 @@ export default function Onboarding() {
                   onClick={handleNextQuestion}
                   disabled={socResponses[currentQuestionIndex] === undefined || isSaving}
                   className={cn(
-                    'w-2/3 h-12 shrink-0 text-sm sm:text-base font-bold',
+                    'w-2/3 h-10 sm:h-12 shrink-0 text-xs sm:text-base font-bold',
                     currentQuestionIndex === 12 ? 'bg-indigo-600 hover:bg-indigo-700' : '',
+                    saveError ? 'bg-red-600 hover:bg-red-700 text-white' : '',
                   )}
                 >
                   {isSaving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
                   {isSaving
                     ? 'Salvando...'
                     : saveError
-                      ? 'Tente novamente'
+                      ? 'Erro - Tentar Novamente'
                       : currentQuestionIndex === 12
                         ? 'Próxima Etapa'
                         : 'Próxima'}
-                  {!isSaving && currentQuestionIndex !== 12 && (
+                  {!isSaving && !saveError && currentQuestionIndex !== 12 && (
                     <ArrowRight className="w-4 h-4 ml-2" />
                   )}
                 </Button>
@@ -567,20 +607,20 @@ export default function Onboarding() {
 
           {/* Step 4: Integração Passiva */}
           {step === 4 && (
-            <div className="space-y-6 animate-fade-in max-w-xl mx-auto text-center">
-              <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+            <div className="space-y-4 sm:space-y-6 animate-fade-in max-w-xl mx-auto text-center">
+              <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                <CheckCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-600" />
               </div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 Integração Passiva
               </h1>
-              <p className="text-slate-500 mt-2 text-sm sm:text-base">
+              <p className="text-slate-500 mt-1 sm:mt-2 text-xs sm:text-base">
                 Configure suas preferências antes de finalizar.
               </p>
 
-              <div className="text-left space-y-6 mt-6">
-                <div className="space-y-4 pt-2">
-                  <Label className="text-sm font-bold text-slate-700">
+              <div className="text-left space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+                <div className="space-y-3 sm:space-y-4 pt-2">
+                  <Label className="text-xs sm:text-sm font-bold text-slate-700">
                     Com que frequência deseja receber sugestões de pausas?
                   </Label>
                   <RadioGroup
@@ -588,27 +628,27 @@ export default function Onboarding() {
                     onValueChange={(val) => setFormData({ ...formData, checkinFrequency: val })}
                     className="flex flex-col space-y-2"
                   >
-                    <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 cursor-pointer">
+                    <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-2.5 sm:p-3 rounded-lg border border-slate-200 cursor-pointer">
                       <RadioGroupItem value="daily" id="f1" />
-                      <Label htmlFor="f1" className="cursor-pointer w-full text-sm">
+                      <Label htmlFor="f1" className="cursor-pointer w-full text-xs sm:text-sm">
                         Diariamente
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 cursor-pointer">
+                    <div className="flex items-center space-x-3 bg-slate-50 hover:bg-slate-100 p-2.5 sm:p-3 rounded-lg border border-slate-200 cursor-pointer">
                       <RadioGroupItem value="weekly" id="f2" />
-                      <Label htmlFor="f2" className="cursor-pointer w-full text-sm">
+                      <Label htmlFor="f2" className="cursor-pointer w-full text-xs sm:text-sm">
                         Semanalmente
                       </Label>
                     </div>
                   </RadioGroup>
                 </div>
 
-                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200 gap-4">
+                <div className="flex items-center justify-between bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 gap-3 sm:gap-4">
                   <div className="space-y-0.5">
-                    <Label className="text-sm font-bold text-slate-800">
+                    <Label className="text-xs sm:text-sm font-bold text-slate-800">
                       Privacidade (K-Anonymity)
                     </Label>
-                    <p className="text-[11px] sm:text-xs text-slate-500">
+                    <p className="text-[10px] sm:text-xs text-slate-500">
                       Concordo que meus dados de grupo sejam exibidos de forma anônima e agregada
                       para o RH.
                     </p>
@@ -620,18 +660,26 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-4">
+              <div className="flex gap-3 sm:gap-4 pt-4">
+                <Button
+                  onClick={handlePrev}
+                  variant="outline"
+                  className="w-1/3 h-10 sm:h-12 text-xs sm:text-sm"
+                >
+                  <ArrowLeft className="w-4 h-4 sm:mr-2" />{' '}
+                  <span className="hidden sm:inline">Voltar</span>
+                </Button>
                 <Button
                   onClick={handleFinish}
                   disabled={isSaving || !formData.privacyAccepted}
-                  className="w-full h-12 text-sm sm:text-base font-bold bg-emerald-600 hover:bg-emerald-700"
+                  className="w-2/3 h-10 sm:h-12 text-xs sm:text-base font-bold bg-emerald-600 hover:bg-emerald-700"
                 >
                   {isSaving ? (
-                    <Loader2 className="animate-spin w-5 h-5 mr-2" />
+                    <Loader2 className="animate-spin w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   ) : (
-                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   )}
-                  {isSaving ? 'Finalizando...' : 'Acessar meu Dashboard'}
+                  {isSaving ? 'Finalizando...' : 'Acessar Dashboard'}
                 </Button>
               </div>
             </div>
