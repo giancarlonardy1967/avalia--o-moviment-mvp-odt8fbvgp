@@ -1,30 +1,48 @@
+onRecordCreateRequest((e) => {
+  const info = e.requestInfo()
+  const body = info.body || {}
+
+  if (info.auth && !info.hasSuperuserAuth()) {
+    if (body.user_id && body.user_id !== info.auth.id) {
+      throw new BadRequestError('Identity injection detected')
+    }
+  }
+  e.next()
+}, 'soc13_responses')
+
+onRecordUpdateRequest((e) => {
+  const info = e.requestInfo()
+  const body = info.body || {}
+
+  if (info.auth && !info.hasSuperuserAuth()) {
+    if (body.user_id && body.user_id !== info.auth.id) {
+      throw new BadRequestError('Identity injection detected')
+    }
+  }
+  e.next()
+}, 'soc13_responses')
+
 onRecordValidate((e) => {
   const record = e.record
-  const raw = record.getInt('raw_value')
+
+  // Use get() to safely retrieve values across different PB versions
+  const rawValue = record.get('raw_value')
+  const raw = typeof rawValue === 'number' ? rawValue : parseInt(rawValue) || 0
 
   if (raw < 1 || raw > 7) {
     throw new BadRequestError('raw_value must be between 1 and 7')
   }
 
-  const index = record.getInt('question_index')
+  const indexValue = record.get('question_index')
+  const index = typeof indexValue === 'number' ? indexValue : parseInt(indexValue) || 0
+
   let calc = raw
-  if ([1, 2, 3, 7, 10].includes(index)) {
+  // The frontend sends 0-based indices.
+  // In 0-based format, the inverted indices are 0, 1, 2, 6, 9.
+  if ([0, 1, 2, 6, 9].includes(index)) {
     calc = 8 - raw
   }
   record.set('calculated_score', calc)
-
-  // Prevent identity injection on direct HTTP saves
-  try {
-    const info = e.requestInfo()
-    if (info && info.auth && !info.hasSuperuserAuth()) {
-      if (record.get('user_id') !== info.auth.id) {
-        throw new BadRequestError('Identity injection detected')
-      }
-    }
-  } catch (err) {
-    // requestInfo throws outside HTTP context, we just ignore that TypeError
-    if (err instanceof BadRequestError) throw err
-  }
 
   e.next()
 }, 'soc13_responses')

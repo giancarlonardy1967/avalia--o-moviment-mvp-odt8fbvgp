@@ -185,6 +185,7 @@ export default function Onboarding() {
 
   const [socResponses, setSocResponses] = useState<Record<number, number>>({})
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [saveError, setSaveError] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -204,6 +205,7 @@ export default function Onboarding() {
   const handlePrev = () => setStep((s) => s - 1)
 
   const handleNextQuestion = async () => {
+    setSaveError(false)
     const val = socResponses[currentQuestionIndex]
     if (val === undefined || !user) return
 
@@ -223,13 +225,19 @@ export default function Onboarding() {
             calculated_score: calculated_score,
           })
         }
-      } catch (e) {
-        await pb.collection('soc13_responses').create({
-          user_id: user.id,
-          question_index: currentQuestionIndex,
-          raw_value: val,
-          calculated_score: calculated_score,
-        })
+      } catch (e: any) {
+        // A 404 indicates the record doesn't exist yet, which is expected for the first save
+        if (e.status === 404) {
+          await pb.collection('soc13_responses').create({
+            user_id: user.id,
+            question_index: currentQuestionIndex,
+            raw_value: val,
+            calculated_score: calculated_score,
+          })
+        } else {
+          // Re-throw genuine network or server errors
+          throw e
+        }
       }
 
       if (currentQuestionIndex === SOC13_QUESTIONS_FULL.length - 1) {
@@ -238,13 +246,22 @@ export default function Onboarding() {
         setCurrentQuestionIndex((i) => i + 1)
       }
     } catch (err: any) {
-      toast.error('Erro de conexão. A resposta não foi salva. Tente novamente.')
+      console.error('Save error:', err)
+      setSaveError(true)
+      toast.error('Erro de conexão. A resposta não foi salva.', {
+        action: {
+          label: 'Tente novamente',
+          onClick: () => handleNextQuestion(),
+        },
+        duration: 5000,
+      })
     } finally {
       setIsSaving(false)
     }
   }
 
   const handlePrevQuestion = () => {
+    setSaveError(false)
     if (currentQuestionIndex === 0) {
       handlePrev()
     } else {
@@ -478,9 +495,10 @@ export default function Onboarding() {
                 <RadioGroup
                   key={currentQuestionIndex}
                   value={socResponses[currentQuestionIndex]?.toString() || ''}
-                  onValueChange={(val) =>
+                  onValueChange={(val) => {
+                    setSaveError(false)
                     setSocResponses((prev) => ({ ...prev, [currentQuestionIndex]: parseInt(val) }))
-                  }
+                  }}
                   className="grid grid-cols-1 sm:grid-cols-7 gap-3"
                 >
                   {SOC13_QUESTIONS_FULL[currentQuestionIndex].options.map((opt) => {
@@ -549,7 +567,13 @@ export default function Onboarding() {
                   ) : currentQuestionIndex === 12 ? (
                     <CheckCircle2 className="w-5 h-5 mr-2" />
                   ) : null}
-                  {isSaving ? 'Salvando...' : currentQuestionIndex === 12 ? 'Finalizar' : 'Próxima'}
+                  {isSaving
+                    ? 'Salvando...'
+                    : saveError
+                      ? 'Tente novamente'
+                      : currentQuestionIndex === 12
+                        ? 'Finalizar'
+                        : 'Próxima'}
                   {currentQuestionIndex !== 12 && !isSaving && (
                     <ArrowRight className="w-5 h-5 ml-2" />
                   )}
