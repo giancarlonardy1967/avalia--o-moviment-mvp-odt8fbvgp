@@ -10,6 +10,9 @@ import Onboarding from './pages/Onboarding'
 import EmployeeApp from './pages/EmployeeApp'
 import Dashboard from './pages/Dashboard'
 import HrDashboard from './pages/hr/Dashboard'
+import HrCompliance from './pages/hr/Compliance'
+import HrTeams from './pages/hr/Teams'
+import HrReports from './pages/hr/Reports'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 const App = () => (
@@ -29,6 +32,9 @@ const App = () => (
 
             <Route element={<ProtectedRoute allowedRoles={['hr_manager', 'admin']} />}>
               <Route path="/rh/dashboard" element={<HrDashboard />} />
+              <Route path="/rh/compliance" element={<HrCompliance />} />
+              <Route path="/rh/equipes" element={<HrTeams />} />
+              <Route path="/rh/relatorios" element={<HrReports />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
           </Route>

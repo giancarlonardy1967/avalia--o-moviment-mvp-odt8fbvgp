@@ -36,6 +36,34 @@ export default function EmployeeApp() {
   const [isHolding, setIsHolding] = useState(false)
   const holdTimer = useRef<NodeJS.Timeout | null>(null)
   const [suggestedHabit, setSuggestedHabit] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
+  const [canCheckIn, setCanCheckIn] = useState(true)
+  const [hasFinishedFlow, setHasFinishedFlow] = useState(false)
+
+  const fetchProfile = async () => {
+    if (user) {
+      try {
+        const record = await pb
+          .collection('employee_profiles')
+          .getFirstListItem(`user_id="${user.id}"`)
+        setProfile(record)
+        if (record.last_checkin_at) {
+          const lastCheckin = new Date(record.last_checkin_at).getTime()
+          const now = new Date().getTime()
+          const hoursSince = (now - lastCheckin) / (1000 * 60 * 60)
+          setCanCheckIn(hoursSince > 48)
+        }
+        setCurrentState('idle') // Skip onboarding if profile exists
+      } catch (e) {
+        // Profile not found, start onboarding
+        setCurrentState('onboarding-1')
+      }
+    }
+  }
+
+  useEffect(() => {
+    fetchProfile()
+  }, [user])
 
   const fetchHabit = async () => {
     try {
@@ -78,12 +106,45 @@ export default function EmployeeApp() {
             raw_value: value,
             calculated_score: value * 7,
           })
+
+          if (profile) {
+            const updatedProfile = await pb.collection('employee_profiles').update(profile.id, {
+              last_checkin_at: new Date().toISOString(),
+            })
+            setProfile(updatedProfile)
+            setCanCheckIn(false)
+          } else {
+            const newProfile = await pb.collection('employee_profiles').create({
+              user_id: user.id,
+              last_checkin_at: new Date().toISOString(),
+              department: 'Geral',
+              team: 'Geral',
+            })
+            setProfile(newProfile)
+            setCanCheckIn(false)
+          }
         } catch (e) {
           console.error(e)
         }
       }
       setCurrentState('habit-suggestion')
     }
+  }
+
+  const finishOnboarding = async () => {
+    if (user && !profile) {
+      try {
+        const newProfile = await pb.collection('employee_profiles').create({
+          user_id: user.id,
+          department: 'Geral',
+          team: 'Geral',
+        })
+        setProfile(newProfile)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    setCurrentState('idle')
   }
 
   const handleHabitAction = async (completed: boolean) => {
@@ -102,19 +163,20 @@ export default function EmployeeApp() {
     if (completed) {
       setCurrentState('feedback')
     } else {
+      setHasFinishedFlow(true)
       toast({ title: 'Tudo bem!', description: 'Voltando para segundo plano.' })
       setCurrentState('idle')
     }
   }
 
   useEffect(() => {
-    if (currentState === 'idle') {
+    if (currentState === 'idle' && !hasFinishedFlow) {
       const timer = setTimeout(() => {
         setCurrentState('habit-trigger')
       }, 5000)
       return () => clearTimeout(timer)
     }
-  }, [currentState])
+  }, [currentState, hasFinishedFlow])
 
   return (
     <div className="min-h-screen bg-black/5 flex items-center justify-center p-4 font-sans">
@@ -236,7 +298,7 @@ export default function EmployeeApp() {
               </div>
 
               <Button
-                onClick={() => setCurrentState('idle')}
+                onClick={finishOnboarding}
                 className="w-full h-12 text-lg rounded-full bg-salvia hover:bg-salvia/90 mt-auto text-white"
               >
                 Tudo Pronto
@@ -257,14 +319,17 @@ export default function EmployeeApp() {
               <BreathingCircle isActive={true} />
               <div className="mt-auto w-full flex flex-col gap-3">
                 <Button
-                  onClick={() => setCurrentState('soc-question')}
+                  onClick={() => setCurrentState(canCheckIn ? 'soc-question' : 'habit-suggestion')}
                   className="w-full h-12 text-lg rounded-full bg-azul-ar hover:bg-azul-ar/90 text-salvia font-medium"
                 >
-                  Fazer Check-in
+                  {canCheckIn ? 'Fazer Check-in' : 'Oxigenar a mente'}
                 </Button>
                 <Button
                   variant="ghost"
-                  onClick={() => setCurrentState('idle')}
+                  onClick={() => {
+                    setHasFinishedFlow(true)
+                    setCurrentState('idle')
+                  }}
                   className="w-full h-12 rounded-full text-muted-foreground"
                 >
                   Agora não posso
@@ -342,6 +407,7 @@ export default function EmployeeApp() {
               </p>
               <Button
                 onClick={() => {
+                  setHasFinishedFlow(true)
                   toast({ title: 'Rotina salva', description: 'Continuando em segundo plano.' })
                   setCurrentState('idle')
                 }}
