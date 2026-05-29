@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T14:06:49.607Z",
+  "generatedAt": "2026-05-29T14:12:39.707Z",
   "collections": [
     {
       "name": "users",
@@ -89,7 +89,7 @@
       "name": "soc13_responses",
       "type": "base",
       "apiRules": {
-        "list": "user_id = @request.auth.id",
+        "list": "@request.auth.id != ''",
         "view": "user_id = @request.auth.id",
         "create": "@request.auth.id != ''",
         "update": "user_id = @request.auth.id",
@@ -142,7 +142,7 @@
       "name": "micro_habits_logs",
       "type": "base",
       "apiRules": {
-        "list": "user_id = @request.auth.id",
+        "list": "@request.auth.id != ''",
         "view": "user_id = @request.auth.id",
         "create": "@request.auth.id != ''",
         "update": "user_id = @request.auth.id",
@@ -166,6 +166,58 @@
           "name": "completed",
           "type": "bool",
           "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "habits_library",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "category",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "duration_minutes",
+          "type": "number",
+          "required": true,
           "system": false
         },
         {

@@ -80,9 +80,9 @@ export default {
           5: 'hsl(var(--chart-5))',
         },
         // Munari Palette Helpers
-        salvia: 'hsl(156 25% 38%)',
-        terracota: 'hsl(14 62% 65%)',
-        'azul-ar': 'hsl(200 40% 94%)',
+        salvia: '#A7BEA9',
+        terracota: '#E67E5F',
+        'azul-ar': '#D1E9F6',
       },
       borderRadius: {
         lg: 'var(--radius)',

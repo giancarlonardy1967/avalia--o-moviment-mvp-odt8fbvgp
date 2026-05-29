@@ -17,7 +17,7 @@ import {
 import { ReactNode } from 'react'
 
 const navigation = [
-  { name: 'Visão Geral (ROI)', href: '/rh', icon: TrendingDown },
+  { name: 'Visão Geral (ROI)', href: '/rh/dashboard', icon: TrendingDown },
   { name: 'Compliance NR1', href: '/rh/compliance', icon: ShieldAlert },
   { name: 'Mapa de Equipes', href: '/rh/equipes', icon: Users },
   { name: 'Relatórios (Selo)', href: '/rh/relatorios', icon: BarChart3 },
@@ -43,7 +43,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.href}
-                        end={item.href === '/rh'}
+                        end={item.href === '/rh' || item.href === '/rh/dashboard'}
                         className={({ isActive }) =>
                           cn(
                             'flex items-center gap-3 px-3 py-2 rounded-md transition-colors',

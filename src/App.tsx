@@ -9,6 +9,7 @@ import Layout from './components/Layout'
 import Onboarding from './pages/Onboarding'
 import EmployeeApp from './pages/EmployeeApp'
 import Dashboard from './pages/Dashboard'
+import HrDashboard from './pages/hr/Dashboard'
 
 const App = () => (
   <AuthProvider>
@@ -21,6 +22,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/employee" element={<EmployeeApp />} />
+            <Route path="/rh/dashboard" element={<HrDashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>
           <Route path="*" element={<NotFound />} />
