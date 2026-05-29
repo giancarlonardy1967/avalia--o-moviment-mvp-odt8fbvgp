@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -186,14 +186,61 @@ export default function Onboarding() {
   const [socResponses, setSocResponses] = useState<Record<number, number>>({})
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 
+  useEffect(() => {
+    if (!user) return
+    pb.collection('soc13_responses')
+      .getFullList({ filter: `user_id = '${user.id}'` })
+      .then((records) => {
+        const loaded: Record<number, number> = {}
+        records.forEach((r) => {
+          loaded[r.question_index] = r.raw_value
+        })
+        setSocResponses(loaded)
+      })
+      .catch(() => {})
+  }, [user])
+
   const handleNext = () => setStep((s) => s + 1)
   const handlePrev = () => setStep((s) => s - 1)
 
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex === SOC13_QUESTIONS_FULL.length - 1) {
-      handleFinish()
-    } else {
-      setCurrentQuestionIndex((i) => i + 1)
+  const handleNextQuestion = async () => {
+    const val = socResponses[currentQuestionIndex]
+    if (val === undefined || !user) return
+
+    setIsSaving(true)
+    try {
+      const INVERTED_INDICES = [0, 1, 2, 6, 9]
+      const calculated_score = INVERTED_INDICES.includes(currentQuestionIndex) ? 8 - val : val
+
+      try {
+        const existing = await pb
+          .collection('soc13_responses')
+          .getFirstListItem(`user_id = '${user.id}' && question_index = ${currentQuestionIndex}`)
+
+        if (existing.raw_value !== val) {
+          await pb.collection('soc13_responses').update(existing.id, {
+            raw_value: val,
+            calculated_score: calculated_score,
+          })
+        }
+      } catch (e) {
+        await pb.collection('soc13_responses').create({
+          user_id: user.id,
+          question_index: currentQuestionIndex,
+          raw_value: val,
+          calculated_score: calculated_score,
+        })
+      }
+
+      if (currentQuestionIndex === SOC13_QUESTIONS_FULL.length - 1) {
+        await handleFinish()
+      } else {
+        setCurrentQuestionIndex((i) => i + 1)
+      }
+    } catch (err: any) {
+      toast.error('Erro de conexão. A resposta não foi salva. Tente novamente.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -244,25 +291,10 @@ export default function Onboarding() {
         })
       }
 
-      const INVERTED_INDICES = [0, 1, 2, 6, 9]
-
-      const socPromises = Object.entries(socResponses).map(([qIndex, val]) => {
-        const index = parseInt(qIndex)
-        const calculated_score = INVERTED_INDICES.includes(index) ? 8 - val : val
-
-        return pb.collection('soc13_responses').create({
-          user_id: user.id,
-          question_index: index,
-          raw_value: val,
-          calculated_score: calculated_score,
-        })
-      })
-      await Promise.all(socPromises)
-
       toast.success('Onboarding concluído com sucesso!')
       navigate('/employee')
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao salvar perfil')
+      toast.error(err.message || 'Erro ao finalizar perfil')
     } finally {
       setIsSaving(false)
     }
@@ -444,7 +476,8 @@ export default function Onboarding() {
 
               <div className="flex-1 flex flex-col justify-center my-6">
                 <RadioGroup
-                  value={socResponses[currentQuestionIndex]?.toString()}
+                  key={currentQuestionIndex}
+                  value={socResponses[currentQuestionIndex]?.toString() || ''}
                   onValueChange={(val) =>
                     setSocResponses((prev) => ({ ...prev, [currentQuestionIndex]: parseInt(val) }))
                   }
