@@ -6,20 +6,23 @@ routerAdd(
     const userId = e.auth?.id
     if (!userId) return e.unauthorizedError('Auth required')
 
-    const answers = body.answers || {}
+    const responses = body.responses || []
     let totalScore = 0
-    const INVERTED_ITEMS = ['P1', 'P2', 'P3', 'P7', 'P10']
+    const INVERTED_INDICES = [0, 1, 2, 6, 9]
 
     $app.runInTransaction((txApp) => {
-      for (const key in answers) {
-        const val = Number(answers[key]) || 0
+      for (const resp of responses) {
+        const index = Number(resp.question_index)
+        const val = Number(resp.raw_value)
+
         if (val < 1 || val > 7) {
           throw new BadRequestError('Invalid raw_value', {
-            answers: new ValidationError('invalid_value', 'Value must be between 1 and 7'),
+            responses: new ValidationError('invalid_value', 'Value must be between 1 and 7'),
           })
         }
+
         let calc = val
-        if (INVERTED_ITEMS.includes(key)) {
+        if (INVERTED_INDICES.includes(index)) {
           calc = 8 - val
         }
         totalScore += calc
@@ -27,7 +30,7 @@ routerAdd(
         const col = txApp.findCollectionByNameOrId('soc13_responses')
         const record = new Record(col)
         record.set('user_id', userId)
-        record.set('question_index', parseInt(key.replace('P', '')))
+        record.set('question_index', index)
         record.set('raw_value', val)
         record.set('calculated_score', calc)
         txApp.save(record)

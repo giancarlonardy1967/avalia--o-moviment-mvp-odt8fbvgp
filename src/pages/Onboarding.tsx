@@ -222,27 +222,8 @@ export default function Onboarding() {
         return
       }
 
-      await pb.send('/backend/v1/soc13/submit', {
-        method: 'POST',
-        body: JSON.stringify({
-          user_id: user.id,
-          responses: responsesPayload,
-        }),
-      })
-
       if (formData.name) {
         await pb.collection('users').update(user.id, { name: formData.name })
-      }
-
-      if (selectedHabit) {
-        const habit = habits.find((h) => h.id === selectedHabit)
-        if (habit) {
-          await pb.collection('micro_habits_logs').create({
-            user_id: user.id,
-            habit_type: habit.title,
-            completed: true,
-          })
-        }
       }
 
       let profileId = null
@@ -259,7 +240,6 @@ export default function Onboarding() {
         company_name: formData.company,
         department: formData.department,
         team: formData.team,
-        predictive_score: totalScore,
         last_checkin_at: new Date().toISOString(),
       }
 
@@ -270,6 +250,49 @@ export default function Onboarding() {
           user_id: user.id,
           ...profileData,
         })
+      }
+
+      if (selectedHabit) {
+        const habit = habits.find((h) => h.id === selectedHabit)
+        if (habit) {
+          await pb.collection('micro_habits_logs').create({
+            user_id: user.id,
+            habit_type: habit.title,
+            completed: true,
+          })
+        }
+      }
+
+      let submitSuccess = false
+      let attempt = 0
+      const maxAttempts = 4
+      let lastError: any = null
+
+      while (attempt < maxAttempts && !submitSuccess) {
+        try {
+          await pb.send('/backend/v1/soc13/submit', {
+            method: 'POST',
+            body: JSON.stringify({
+              user_id: user.id,
+              responses: responsesPayload,
+            }),
+          })
+          submitSuccess = true
+        } catch (err: any) {
+          attempt++
+          lastError = err
+          if (attempt < maxAttempts) {
+            const backoffTime = attempt === 1 ? 500 : attempt === 2 ? 1000 : 2000
+            await new Promise((r) => setTimeout(r, backoffTime))
+          }
+        }
+      }
+
+      if (!submitSuccess) {
+        setSubmitError(true)
+        toast.error(lastError?.message || 'Erro ao enviar avaliação. Tente novamente.')
+        setIsSaving(false)
+        return
       }
 
       localStorage.removeItem('onboarding_step')
