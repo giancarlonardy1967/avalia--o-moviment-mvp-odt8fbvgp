@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
+import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import { toast } from 'sonner'
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, Shield, Heart, Activity } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -226,6 +227,15 @@ export default function Onboarding() {
         await pb.collection('users').update(user.id, { name: formData.name })
       }
 
+      // Pre-flight auth refresh to ensure token is valid before final submission
+      try {
+        if (pb.authStore.isValid) {
+          await pb.collection('users').authRefresh()
+        }
+      } catch (authErr) {
+        console.warn('Failed to refresh auth token before submit', authErr)
+      }
+
       let profileId = null
       try {
         const existing = await pb
@@ -265,32 +275,48 @@ export default function Onboarding() {
 
       let submitSuccess = false
       let attempt = 0
-      const maxAttempts = 4
+      const maxAttempts = 2
       let lastError: any = null
 
       while (attempt < maxAttempts && !submitSuccess) {
         try {
           await pb.send('/backend/v1/soc13/submit', {
             method: 'POST',
-            body: JSON.stringify({
+            body: {
               user_id: user.id,
               responses: responsesPayload,
-            }),
+            },
           })
           submitSuccess = true
         } catch (err: any) {
           attempt++
           lastError = err
+          console.error(`Submission attempt ${attempt} failed:`, err)
+          if (err.status === 400) {
+            // Do not retry on Bad Request
+            break
+          }
           if (attempt < maxAttempts) {
-            const backoffTime = attempt === 1 ? 500 : attempt === 2 ? 1000 : 2000
-            await new Promise((r) => setTimeout(r, backoffTime))
+            await new Promise((r) => setTimeout(r, 1000))
           }
         }
       }
 
       if (!submitSuccess) {
         setSubmitError(true)
-        toast.error(lastError?.message || 'Erro ao enviar avaliação. Tente novamente.')
+        console.error('Final SOC13 Submission Error:', lastError, lastError?.response)
+
+        let errorMessage = 'Erro ao enviar avaliação. Tente novamente.'
+        if (lastError?.status === 400) {
+          const fieldErrors = extractFieldErrors(lastError)
+          const errorMsgs = Object.values(fieldErrors).join(', ')
+          errorMessage =
+            errorMsgs ||
+            lastError?.response?.message ||
+            'Erro de validação (400) nos dados enviados.'
+        }
+
+        toast.error(errorMessage)
         setIsSaving(false)
         return
       }
