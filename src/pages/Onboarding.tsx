@@ -114,7 +114,17 @@ export default function Onboarding() {
     }
   })
 
-  const [socResponses, setSocResponses] = useState<Record<number, number>>({})
+  const [socResponses, setSocResponses] = useState<Record<number, number>>(() => {
+    const saved = localStorage.getItem('onboarding_soc')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch {
+        /* intentionally ignored */
+      }
+    }
+    return {}
+  })
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(() => {
     const saved = localStorage.getItem('onboarding_q_idx')
     return saved ? Number(saved) : 0
@@ -131,24 +141,18 @@ export default function Onboarding() {
   useEffect(() => {
     localStorage.setItem('onboarding_form', JSON.stringify(formData))
   }, [formData])
-  const [saveError, setSaveError] = useState(false)
+
+  useEffect(() => {
+    localStorage.setItem('onboarding_soc', JSON.stringify(socResponses))
+  }, [socResponses])
+
+  const [submitError, setSubmitError] = useState(false)
 
   const [habits, setHabits] = useState<any[]>([])
   const [selectedHabit, setSelectedHabit] = useState<string>('')
 
   useEffect(() => {
     if (!user) return
-    pb.collection('soc13_responses')
-      .getFullList({ filter: `user_id = '${user.id}'` })
-      .then((records) => {
-        const loaded: Record<number, number> = {}
-        records.forEach((r) => {
-          loaded[r.question_index] = r.raw_value
-        })
-        setSocResponses(loaded)
-      })
-      .catch(() => {})
-
     pb.collection('habits_library')
       .getFullList()
       .then(setHabits)
@@ -158,65 +162,13 @@ export default function Onboarding() {
   const handleNext = () => setStep((s) => s + 1)
   const handlePrev = () => setStep((s) => s - 1)
 
-  const handleNextQuestion = async () => {
-    setSaveError(false)
+  const handleNextQuestion = () => {
     const val = socResponses[currentQuestionIndex]
 
     if (val === undefined || val < 1 || val > 7) {
       toast.error('Erro de validação (422): O valor deve estar entre 1 e 7.')
       return
     }
-    if (!user) return
-
-    setIsSaving(true)
-    let retries = 3
-    let success = false
-
-    const INVERTED_INDICES = [0, 1, 2, 6, 9]
-    const calculated_score = INVERTED_INDICES.includes(currentQuestionIndex) ? 8 - val : val
-
-    while (retries > 0 && !success) {
-      try {
-        if (!pb.authStore.isValid) throw new Error('Sessão expirada. Recarregue a página.')
-
-        try {
-          const existing = await pb
-            .collection('soc13_responses')
-            .getFirstListItem(`user_id = '${user.id}' && question_index = ${currentQuestionIndex}`)
-
-          if (existing.raw_value !== val) {
-            await pb.collection('soc13_responses').update(existing.id, {
-              raw_value: val,
-              calculated_score: calculated_score,
-            })
-          }
-        } catch (e: any) {
-          if (e.status === 404) {
-            await pb.collection('soc13_responses').create({
-              user_id: user.id,
-              question_index: currentQuestionIndex,
-              raw_value: val,
-              calculated_score: calculated_score,
-            })
-          } else {
-            throw e
-          }
-        }
-        success = true
-      } catch (err: any) {
-        retries -= 1
-        if (retries === 0) {
-          setSaveError(true)
-          toast.error('Erro de conexão. A resposta não foi salva. Tente novamente.')
-          setIsSaving(false)
-          return
-        }
-        await new Promise((r) => setTimeout(r, 1000))
-      }
-    }
-
-    setIsSaving(false)
-    setSaveError(false)
 
     if (currentQuestionIndex === SOC13_QUESTIONS_FULL.length - 1) {
       handleNext()
@@ -226,7 +178,6 @@ export default function Onboarding() {
   }
 
   const handlePrevQuestion = () => {
-    setSaveError(false)
     if (currentQuestionIndex === 0) {
       handlePrev()
     } else {
@@ -237,9 +188,11 @@ export default function Onboarding() {
   const handleFinish = async () => {
     if (!user) return
     setIsSaving(true)
+    setSubmitError(false)
     try {
       let totalScore = 0
       const INVERTED_INDICES = [0, 1, 2, 6, 9]
+      const responsesPayload = []
 
       for (let i = 0; i < 13; i++) {
         const val = socResponses[i]
@@ -250,6 +203,12 @@ export default function Onboarding() {
           setIsSaving(false)
           return
         }
+
+        responsesPayload.push({
+          question_index: i,
+          raw_value: val,
+        })
+
         if (INVERTED_INDICES.includes(i)) {
           totalScore += 8 - val
         } else {
@@ -262,6 +221,14 @@ export default function Onboarding() {
         setIsSaving(false)
         return
       }
+
+      await pb.send('/backend/v1/soc13/submit', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: user.id,
+          responses: responsesPayload,
+        }),
+      })
 
       if (formData.name) {
         await pb.collection('users').update(user.id, { name: formData.name })
@@ -308,11 +275,13 @@ export default function Onboarding() {
       localStorage.removeItem('onboarding_step')
       localStorage.removeItem('onboarding_q_idx')
       localStorage.removeItem('onboarding_form')
+      localStorage.removeItem('onboarding_soc')
 
       toast.success('Onboarding concluído com sucesso!')
       navigate('/employee')
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao finalizar perfil')
+      setSubmitError(true)
+      toast.error(err.message || 'Erro ao finalizar perfil. Tente novamente.')
     } finally {
       setIsSaving(false)
     }
@@ -545,7 +514,6 @@ export default function Onboarding() {
                       <button
                         key={val}
                         onClick={() => {
-                          setSaveError(false)
                           setSocResponses((prev) => ({ ...prev, [currentQuestionIndex]: val }))
                         }}
                         className={cn(
@@ -582,24 +550,14 @@ export default function Onboarding() {
                 </Button>
                 <Button
                   onClick={handleNextQuestion}
-                  disabled={socResponses[currentQuestionIndex] === undefined || isSaving}
+                  disabled={socResponses[currentQuestionIndex] === undefined}
                   className={cn(
                     'w-2/3 h-10 sm:h-12 shrink-0 text-xs sm:text-base font-bold',
                     currentQuestionIndex === 12 ? 'bg-indigo-600 hover:bg-indigo-700' : '',
-                    saveError ? 'bg-red-600 hover:bg-red-700 text-white' : '',
                   )}
                 >
-                  {isSaving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                  {isSaving
-                    ? 'Salvando...'
-                    : saveError
-                      ? 'Erro - Tentar Novamente'
-                      : currentQuestionIndex === 12
-                        ? 'Próxima Etapa'
-                        : 'Próxima'}
-                  {!isSaving && !saveError && currentQuestionIndex !== 12 && (
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  )}
+                  {currentQuestionIndex === 12 ? 'Próxima Etapa' : 'Próxima'}
+                  {currentQuestionIndex !== 12 && <ArrowRight className="w-4 h-4 ml-2" />}
                 </Button>
               </div>
             </div>
@@ -672,14 +630,23 @@ export default function Onboarding() {
                 <Button
                   onClick={handleFinish}
                   disabled={isSaving || !formData.privacyAccepted}
-                  className="w-2/3 h-10 sm:h-12 text-xs sm:text-base font-bold bg-emerald-600 hover:bg-emerald-700"
+                  className={cn(
+                    'w-2/3 h-10 sm:h-12 text-xs sm:text-base font-bold',
+                    submitError
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                      : 'bg-emerald-600 hover:bg-emerald-700',
+                  )}
                 >
                   {isSaving ? (
                     <Loader2 className="animate-spin w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   ) : (
                     <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   )}
-                  {isSaving ? 'Finalizando...' : 'Acessar Dashboard'}
+                  {isSaving
+                    ? 'Finalizando...'
+                    : submitError
+                      ? 'Tentar Novamente'
+                      : 'Acessar Dashboard'}
                 </Button>
               </div>
             </div>
